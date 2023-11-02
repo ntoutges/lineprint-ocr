@@ -10,7 +10,7 @@
   },
   "denoise": { // assumes that img has already been simplified
     "limit": 300, // minimum size a blob must be to cound as real
-    "autofill-borders": 100 // px to treat as the border
+    "autofill-borders": 200 // px to treat as the border
   },
   "horizontalPrune": {
     "thick": 30,   // min width of a thick region
@@ -25,9 +25,19 @@
     }
   },
   "charBounds": {
+    "charSize": { // leave components at '0' to calculate automatically
+      "x": 59,
+      "y": 67
+    },
     "xDiff": 10, // amount a pixel must be further left to be considered new
+    "yBuffer": { // amount of pixels around the center line to check
+      "total-offset": 20,
+      "total": 15, // across entire page
+      "individual": 20 // gap from one char to the next
+    },
     "lookaround": { // amount of lines to look around for smallest gap when splitting conjoined chars
-      "vertical": 5,
+      "vertical-up": 5,
+      "vertical-down": 20,
       "horizontal": 5
     }
   }

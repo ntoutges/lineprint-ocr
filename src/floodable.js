@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.floodFillBounds = exports.floodFillAdd = exports.floodFill = exports.floodFillUntil = void 0;
+exports.floodFillBounds = exports.floodFillBeyond = exports.floodFillAdd = exports.floodFill = exports.floodFillUntil = void 0;
 const jimpable_js_1 = require("./jimpable.js");
 const dirs = [
     [-1, 0],
@@ -65,11 +65,34 @@ function floodFillAdd(img, x, y, blacklist) {
             if (val == 0xFF || blacklist.has(wx + width * wy))
                 continue; // not a pixel of interest
             blacklist.add(wx + width * wy);
+            // if (wx > 650) console.log(wx,wy, val)
             queue.push([wx, wy]);
         }
     }
 }
 exports.floodFillAdd = floodFillAdd;
+function floodFillBeyond(img, x, y, bX, bY) {
+    const queue = [[x, y]];
+    const blacklist = new Set();
+    const width = img.bitmap.width;
+    blacklist.add(x + y * width);
+    while (queue.length > 0) {
+        const [x1, y1] = queue.pop();
+        for (const dir of dirs) {
+            const wx = x1 + dir[0];
+            const wy = y1 + dir[1];
+            const val = (0, jimpable_js_1.getPixelAt)(img, wx, wy);
+            if (val == 0xFF || blacklist.has(wx + width * wy))
+                continue; // not a pixel of interest
+            blacklist.add(wx + width * wy);
+            if (wx > bX || wy > bY)
+                return true;
+            queue.push([wx, wy]);
+        }
+    }
+    return false;
+}
+exports.floodFillBeyond = floodFillBeyond;
 function floodFillBounds(img, x, y) {
     const blacklist = new Set();
     const queue = [[x, y]];

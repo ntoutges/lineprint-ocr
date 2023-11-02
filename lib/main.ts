@@ -2,6 +2,7 @@ import Jimp = require("jimp");
 
 import { appendToName, getAllFiles, toAbsoluteInput, toAbsoluteOutput } from "./fsExt.js";
 import { denoise, destring, highlightLines, horizontalPrune, simplify } from "./jimpable.js";
+import { lap, startTimer } from "./timer.js";
 
 export function main(args: string[], namedArgs: Record<string,string>) {
   if (args.length == 0) { // read all
@@ -42,29 +43,35 @@ function doConversion(
 ) {
   return new Promise<string>((resolve,reject) => {
     try {
+      startTimer();
       Jimp.read(input, (err,img) => {
-        console.log(`: Successfully read [${name}]`);
+        writeMessage(`Successfully read`, name);
 
         const simplified = simplify(img);
-        console.log(":>simplified");
+        writeMessage("simplified", name);
         const destrung = destring(simplified.clone());
-        console.log(":>destrung");
+        writeMessage("destrung", name);
         const denoised = denoise(destrung.clone());
-        console.log(":>denoised");
+        writeMessage("denoised", name);
         const pruned = horizontalPrune(denoised.clone());
-        console.log(":>pruned");
+        writeMessage("pruned", name);
         const detected = highlightLines(pruned.clone());
-        console.log(":>highlighted")
+        writeMessage("highlighted", name)
         
-        // simplified.write(output);
-        // destrung.write(appendToName(output, "1"));
-        // denoised.write(appendToName(output, "2"));
-        // pruned.write(appendToName(output,"3"));
-        detected.write(appendToName(output, "4"))
+        detected.write(output)
 
         resolve("Ok.");
       });
     }
     catch(err) { reject(err.toString()); }
   });
+}
+
+function writeMessage(
+  message: string,
+  name: string
+) {
+  const time = lap();
+  const timeStr = `${Math.round(time / 10) / 100}s`;
+  console.log(`: ${message} [\x1b[36m${name}\x1b[0m] (\x1b[33m${timeStr}\x1b[0m)`);
 }

@@ -50,19 +50,22 @@ function denoise(img) {
     const fillBorders = (0, settings_js_1.getSetting)("denoise.autofill-borders"); // skip check for necessary size of flood fill
     const width = img.bitmap.width;
     const height = img.bitmap.height;
+    const rightBorder = width - fillBorders - 1;
+    const bottomBorder = height - fillBorders - 1;
     const blacklist = new Set();
     img.scan(0, 0, width, height, (x, y, idx) => {
-        if (img.bitmap.data[idx] != 0)
+        if (img.bitmap.data[idx] == 0xFF)
             return; // skip white pixels, not important
         if (blacklist.has(x + y * width)) {
             return;
         }
-        const skip = fillBorders && (x < fillBorders || y < fillBorders || x >= width - fillBorders || y >= height - fillBorders);
+        const skip = fillBorders && (x < fillBorders || y < fillBorders || (0, floodable_js_1.floodFillBeyond)(img, x, y, rightBorder, bottomBorder));
         if (skip || (0, floodable_js_1.floodFillUntil)(img, x, y, limit) > 0) { // flood fill couldn't fill all
             (0, floodable_js_1.floodFill)(img, x, y);
         }
-        else
+        else {
             (0, floodable_js_1.floodFillAdd)(img, x, y, blacklist);
+        }
     });
     return img;
 }
@@ -137,28 +140,42 @@ function horizontalPrune(img) {
 }
 exports.horizontalPrune = horizontalPrune;
 // look for top-left (pure) black px
-function highlightLines(img) {
-    const firstBounds = (0, boundable_js_1.getLineCharBounds)(img, 0, img.bitmap.height);
-    const avgChar = (0, boundable_js_1.getAverageCharBounds)(firstBounds);
-    const boundsList = (0, boundable_js_1.getLineFirstCharBounds)(img, avgChar);
-    // for (const boundsLine of boundsList) {
-    for (const bounds of boundsList) {
-        img.scan(bounds.x, bounds.y, bounds.w, bounds.h, (x, y, idx) => {
-            if (img.bitmap.data[idx] != 0) {
-                setPixelAt(img, x, y, 0xA0);
+function highlightLines(img, applyToImg = null) {
+    if (!applyToImg)
+        applyToImg = img; // algorithm gets clean input, highlight gets more original data
+    const bounds = (0, settings_js_1.getSetting)("charBounds.charSize");
+    let avgChar = {
+        w: bounds.x,
+        h: bounds.y
+    };
+    if (bounds.x == 0 && bounds.y == 0) {
+        const firstBounds = (0, boundable_js_1.getLineCharBoundsBlind)(img, 0, img.bitmap.height);
+        avgChar = (0, boundable_js_1.getAverageCharBounds)(firstBounds);
+        console.log("Character Bounds: ", avgChar);
+    }
+    const firstCharBoundsList = (0, boundable_js_1.getLineFirstCharBounds)(img, avgChar);
+    const boundsList = [];
+    for (const firstCharBounds of firstCharBoundsList) {
+        boundsList.push((0, boundable_js_1.getLineCharBounds)(img, avgChar, firstCharBounds, boundsList[boundsList.length - 1]));
+    }
+    for (const boundsLine of boundsList) {
+        for (const bounds of boundsLine) {
+            applyToImg.scan(bounds.x, bounds.y, bounds.w, bounds.h, (x, y, idx) => {
+                if (applyToImg.bitmap.data[idx] != 0) {
+                    setPixelAt(applyToImg, x, y, 0xA0);
+                }
+            });
+            for (let x = bounds.x; x <= bounds.x2; x++) {
+                setPixelAt(applyToImg, x, bounds.y, 0xFF, true);
+                setPixelAt(applyToImg, x, bounds.y2, 0xFF, true);
             }
-        });
-        for (let x = bounds.x; x <= bounds.x2; x++) {
-            setPixelAt(img, x, bounds.y, 0xFF, true);
-            setPixelAt(img, x, bounds.y2, 0xFF, true);
-        }
-        for (let y = bounds.y; y <= bounds.y2; y++) {
-            setPixelAt(img, bounds.x, y, 0xFF, true);
-            setPixelAt(img, bounds.x2, y, 0xFF, true);
+            for (let y = bounds.y; y <= bounds.y2; y++) {
+                setPixelAt(applyToImg, bounds.x, y, 0xFF, true);
+                setPixelAt(applyToImg, bounds.x2, y, 0xFF, true);
+            }
         }
     }
-    // }
-    return img;
+    return applyToImg;
 }
 exports.highlightLines = highlightLines;
 function getPixelAt(img, x, y, fallback = 0xFF) {

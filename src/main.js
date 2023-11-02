@@ -4,6 +4,7 @@ exports.main = void 0;
 const Jimp = require("jimp");
 const fsExt_js_1 = require("./fsExt.js");
 const jimpable_js_1 = require("./jimpable.js");
+const timer_js_1 = require("./timer.js");
 function main(args, namedArgs) {
     if (args.length == 0) { // read all
         args = (0, fsExt_js_1.getAllFiles)(["png"]);
@@ -30,23 +31,20 @@ exports.main = main;
 function doConversion(input, output, name) {
     return new Promise((resolve, reject) => {
         try {
+            (0, timer_js_1.startTimer)();
             Jimp.read(input, (err, img) => {
-                console.log(`: Successfully read [${name}]`);
+                writeMessage(`Successfully read`, name);
                 const simplified = (0, jimpable_js_1.simplify)(img);
-                console.log(":>simplified");
+                writeMessage("simplified", name);
                 const destrung = (0, jimpable_js_1.destring)(simplified.clone());
-                console.log(":>destrung");
+                writeMessage("destrung", name);
                 const denoised = (0, jimpable_js_1.denoise)(destrung.clone());
-                console.log(":>denoised");
+                writeMessage("denoised", name);
                 const pruned = (0, jimpable_js_1.horizontalPrune)(denoised.clone());
-                console.log(":>pruned");
+                writeMessage("pruned", name);
                 const detected = (0, jimpable_js_1.highlightLines)(pruned.clone());
-                console.log(":>highlighted");
-                // simplified.write(output);
-                // destrung.write(appendToName(output, "1"));
-                // denoised.write(appendToName(output, "2"));
-                // pruned.write(appendToName(output,"3"));
-                detected.write((0, fsExt_js_1.appendToName)(output, "4"));
+                writeMessage("highlighted", name);
+                detected.write(output);
                 resolve("Ok.");
             });
         }
@@ -54,5 +52,10 @@ function doConversion(input, output, name) {
             reject(err.toString());
         }
     });
+}
+function writeMessage(message, name) {
+    const time = (0, timer_js_1.lap)();
+    const timeStr = `${Math.round(time / 10) / 100}s`;
+    console.log(`: ${message} [\x1b[36m${name}\x1b[0m] (\x1b[33m${timeStr}\x1b[0m)`);
 }
 //# sourceMappingURL=main.js.map

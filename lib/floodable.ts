@@ -86,9 +86,43 @@ export function floodFillAdd(
       if (val == 0xFF || blacklist.has(wx + width*wy)) continue; // not a pixel of interest
       blacklist.add(wx + width*wy);
 
+      // if (wx > 650) console.log(wx,wy, val)
+
       queue.push([wx,wy]);
     }
   }
+}
+
+export function floodFillBeyond(
+  img: Jimp,
+  x: number,
+  y: number,
+  bX: number,
+  bY: number
+) {
+  const queue: [x:number,y:number][] = [[x,y]];
+  const blacklist = new Set<number>();
+
+  const width = img.bitmap.width;
+  blacklist.add(x + y*width);
+  
+  while (queue.length > 0) {
+    const [x1,y1] = queue.pop();
+    
+    for (const dir of dirs) {
+      const wx = x1 + dir[0];
+      const wy = y1 + dir[1];
+      
+      const val = getPixelAt(img, wx, wy);
+      if (val == 0xFF || blacklist.has(wx + width*wy)) continue; // not a pixel of interest
+      blacklist.add(wx + width*wy);
+
+      if (wx > bX || wy > bY) return true;
+
+      queue.push([wx,wy]);
+    }
+  }
+  return false;
 }
 
 export type Bounds = {
