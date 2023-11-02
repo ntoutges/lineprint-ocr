@@ -1,0 +1,4 @@
+.vscode/
+node_modules/
+io/input/.*
+io/output/.*

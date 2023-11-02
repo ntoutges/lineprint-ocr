@@ -1,0 +1,34 @@
+{
+  "simplify": {
+    "weights": {
+      "r": 0.33,
+      "g": 0.33,
+      "b": 0.33,
+      "base": 0.9
+    },
+    "threshold": 10
+  },
+  "denoise": { // assumes that img has already been simplified
+    "limit": 300, // minimum size a blob must be to cound as real
+    "autofill-borders": 100 // px to treat as the border
+  },
+  "horizontalPrune": {
+    "thick": 30,   // min width of a thick region
+    "thin": 10,    // max width of a thin region
+    "distance": 10, // distance between "thick" and "thin" region
+    "size-check-limit": 1000, // check if resulting region is still large enough to be considered a region, if not, remove from candidates
+    "doDenoise": false, // run denoise to get rid of junk
+    "debug": {
+      "highlight-thins": false,      // grey
+      "highlight-thicks": false,     // dark-red
+      "highlight-finalists": false   // bright-red
+    }
+  },
+  "charBounds": {
+    "xDiff": 10, // amount a pixel must be further left to be considered new
+    "lookaround": { // amount of lines to look around for smallest gap when splitting conjoined chars
+      "vertical": 5,
+      "horizontal": 5
+    }
+  }
+}
