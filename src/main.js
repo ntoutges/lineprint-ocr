@@ -5,6 +5,7 @@ const Jimp = require("jimp");
 const fsExt_js_1 = require("./fsExt.js");
 const jimpable_js_1 = require("./jimpable.js");
 const timer_js_1 = require("./timer.js");
+const settings_js_1 = require("./settings.js");
 function main(args, namedArgs) {
     if (args.length == 0) { // read all
         args = (0, fsExt_js_1.getAllFiles)(["png"]);
@@ -33,7 +34,7 @@ function doConversion(input, output, name) {
         try {
             (0, timer_js_1.startTimer)();
             Jimp.read(input, (err, img) => {
-                writeMessage(`Successfully read`, name);
+                writeMessage(`successfully read`, name);
                 const simplified = (0, jimpable_js_1.simplify)(img);
                 writeMessage("simplified", name);
                 const destrung = (0, jimpable_js_1.destring)(simplified.clone());
@@ -42,9 +43,13 @@ function doConversion(input, output, name) {
                 writeMessage("denoised", name);
                 const pruned = (0, jimpable_js_1.horizontalPrune)(denoised.clone());
                 writeMessage("pruned", name);
-                const detected = (0, jimpable_js_1.highlightLines)(pruned.clone());
-                writeMessage("highlighted", name);
-                detected.write(output);
+                const tokens = (0, jimpable_js_1.getCharTokens)(pruned.clone());
+                writeMessage("tokenized", name);
+                if ((0, settings_js_1.getSetting)("charHighlight.doOutputBounds")) {
+                    const bounded = (0, jimpable_js_1.highlightChars)(img.clone(), tokens);
+                    writeMessage("highlighted", name);
+                    bounded.write(output);
+                }
                 resolve("Ok.");
             });
         }
@@ -56,6 +61,6 @@ function doConversion(input, output, name) {
 function writeMessage(message, name) {
     const time = (0, timer_js_1.lap)();
     const timeStr = `${Math.round(time / 10) / 100}s`;
-    console.log(`: ${message} [\x1b[36m${name}\x1b[0m] (\x1b[33m${timeStr}\x1b[0m)`);
+    console.log(`: [\x1b[36m${name}\x1b[0m] ${message} (\x1b[33m${timeStr}\x1b[0m)`);
 }
 //# sourceMappingURL=main.js.map

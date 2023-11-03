@@ -4,6 +4,7 @@ import { getSetting } from "./settings.js";
 import { Bounds, floodFill, floodFillAdd, floodFillBeyond, floodFillUntil } from "./floodable.js";
 import { getAverageCharBounds, getLineCharBounds, getLineCharBoundsBlind, getLineFirstCharBounds } from "./boundable.js";
 import { categorizeRegions, getPrunableRegions, getRegions, groupRegions, prunePrunableRegions } from "./prunable.js";
+import { Token, getLeftmostBound, getTextOrigion, tokenizeBounds } from "./spaceable.js";
 
 export function simplify(img: Jimp) {
   const rWeight = getSetting<number>("simplify.weights.r");
@@ -165,15 +166,38 @@ export function horizontalPrune(img: Jimp) {
   return img;
 }
 
-// look for top-left (pure) black px
-export function highlightLines(img: Jimp, applyToImg: Jimp = null) {
-  if (!applyToImg) applyToImg = img; // algorithm gets clean input, highlight gets more original data
+// more for testing than anything else
+export function highlightChars(img: Jimp, tokens: Token[][]) {
+  for (const line of tokens) {
+    for (const token of line) {
+      if (token.value != " ") {
+        img.scan(token.bounds.x, token.bounds.y, token.bounds.w,token.bounds.h, (x,y,idx) => {
+          if (img.bitmap.data[idx] != 0) {
+            setPixelAt(img, x,y, 0xA0);
+          }
+        });
+      }
+      
+      for (let x = token.bounds.x; x <= token.bounds.x2; x++) {
+        setPixelAt(img, x,token.bounds.y, 0xFF, true);
+        setPixelAt(img, x,token.bounds.y2, 0xFF, true);
+      }
+      for (let y = token.bounds.y; y <= token.bounds.y2; y++) {
+        setPixelAt(img, token.bounds.x,y, 0xFF, true);
+        setPixelAt(img, token.bounds.x2,y, 0xFF, true);
+      }
+    }
+  }
 
+  return img;
+}
+
+export function getCharTokens(img: Jimp) {
   const bounds = getSetting<{x:number, y:number}>("charBounds.charSize");
   
   let avgChar = {
-    w: bounds.x,
-    h: bounds.y
+    w: Math.round(bounds.x),
+    h: Math.round(bounds.y)
   };
   if (bounds.x == 0 && bounds.y == 0) {
     const firstBounds = getLineCharBoundsBlind(img, 0,img.bitmap.height);
@@ -184,30 +208,20 @@ export function highlightLines(img: Jimp, applyToImg: Jimp = null) {
   const firstCharBoundsList = getLineFirstCharBounds(img, avgChar);
   const boundsList: Bounds[][] = [];
   for (const firstCharBounds of firstCharBoundsList) {
-    boundsList.push(getLineCharBounds(img, avgChar, firstCharBounds, boundsList[boundsList.length-1]))
+    boundsList.push(
+      getLineCharBounds(
+        img,
+        avgChar,
+        firstCharBounds,
+        boundsList[boundsList.length-1] ?? []
+      )
+    )
   }
 
+  const origin = getTextOrigion(boundsList);
+  const tokens = tokenizeBounds(boundsList, origin, avgChar);
 
-  for (const boundsLine of boundsList) {
-    for (const bounds of boundsLine) {
-      applyToImg.scan(bounds.x, bounds.y, bounds.w,bounds.h, (x,y,idx) => {
-        if (applyToImg.bitmap.data[idx] != 0) {
-          setPixelAt(applyToImg, x,y, 0xA0);
-        }
-      });
-      
-      for (let x = bounds.x; x <= bounds.x2; x++) {
-        setPixelAt(applyToImg, x,bounds.y, 0xFF, true);
-        setPixelAt(applyToImg, x,bounds.y2, 0xFF, true);
-      }
-      for (let y = bounds.y; y <= bounds.y2; y++) {
-        setPixelAt(applyToImg, bounds.x,y, 0xFF, true);
-        setPixelAt(applyToImg, bounds.x2,y, 0xFF, true);
-      }
-    }
-  }
-
-  return applyToImg;
+  return tokens;
 }
 
 export function getPixelAt(

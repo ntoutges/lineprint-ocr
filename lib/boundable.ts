@@ -7,7 +7,7 @@ export function getLineCharBounds(
   img: Jimp,
   avgCharBounds: { w: number, h: number },
   firstCharBounds: Bounds,
-  lastCharBoundsList: Bounds[] = []
+  lastCharBoundsList: Bounds[]
 ): Bounds[] {
   const boundsList: Bounds[] = [firstCharBounds];
   const yBuffer = getSetting<number>("charBounds.yBuffer.individual");
@@ -58,20 +58,19 @@ export function getLineCharBounds(
       }
       else charBounds = charBounds2;
     }
-
+    
     // remove any overlap
     const overlapV = getOverlappingBound(charBounds, lastCharBoundsList);
     if (overlapV) {
       charBounds.y = overlapV.y2 + 1;
       charBounds.h = charBounds.y2 - charBounds.y;
       // charBounds = rebound(img, charBounds); // adjust bounds based on new info
-
       const charBounds2 = rebound(img, charBounds);
       if (charBounds2.h == 0) {
         charBounds.x2 = overlapV.x2; // push forwards
         continue;
       }
-
+      
       if (charBounds2.h / avgCharBounds.h < 0.7) { // too small
         charBounds = combineBounds(charBounds, charBounds2);
       }
@@ -468,8 +467,8 @@ export function getAverageCharBounds(boundsList: Bounds[]) {
   heights.sort();
 
   return {
-    w: getMiddle(widths),
-    h: getMiddle(heights)
+    w: Math.round(getMiddle(widths)),
+    h: Math.round(getMiddle(heights))
   }
 }
 

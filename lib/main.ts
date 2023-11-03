@@ -1,8 +1,9 @@
 import Jimp = require("jimp");
 
 import { appendToName, getAllFiles, toAbsoluteInput, toAbsoluteOutput } from "./fsExt.js";
-import { denoise, destring, highlightLines, horizontalPrune, simplify } from "./jimpable.js";
+import { denoise, destring, getCharTokens, highlightChars, horizontalPrune, simplify } from "./jimpable.js";
 import { lap, startTimer } from "./timer.js";
+import { getSetting } from "./settings.js";
 
 export function main(args: string[], namedArgs: Record<string,string>) {
   if (args.length == 0) { // read all
@@ -45,7 +46,7 @@ function doConversion(
     try {
       startTimer();
       Jimp.read(input, (err,img) => {
-        writeMessage(`Successfully read`, name);
+        writeMessage(`successfully read`, name);
 
         const simplified = simplify(img);
         writeMessage("simplified", name);
@@ -55,10 +56,15 @@ function doConversion(
         writeMessage("denoised", name);
         const pruned = horizontalPrune(denoised.clone());
         writeMessage("pruned", name);
-        const detected = highlightLines(pruned.clone());
-        writeMessage("highlighted", name)
-        
-        detected.write(output)
+
+        const tokens = getCharTokens(pruned.clone());
+        writeMessage("tokenized", name);
+
+        if (getSetting("charHighlight.doOutputBounds")) {
+          const bounded = highlightChars(img.clone(), tokens);
+          writeMessage("highlighted", name)
+          bounded.write(output)
+        }
 
         resolve("Ok.");
       });
@@ -73,5 +79,5 @@ function writeMessage(
 ) {
   const time = lap();
   const timeStr = `${Math.round(time / 10) / 100}s`;
-  console.log(`: ${message} [\x1b[36m${name}\x1b[0m] (\x1b[33m${timeStr}\x1b[0m)`);
+  console.log(`: [\x1b[36m${name}\x1b[0m] ${message} (\x1b[33m${timeStr}\x1b[0m)`);
 }

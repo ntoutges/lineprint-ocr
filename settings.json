@@ -40,5 +40,8 @@
       "vertical-down": 20,
       "horizontal": 5
     }
+  },
+  "charHighlight": {
+    "doOutputBounds": true
   }
 }

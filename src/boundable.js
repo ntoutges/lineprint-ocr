@@ -4,7 +4,7 @@ exports.getAverageCharBounds = exports.getTopLeftCharBounds = exports.getLineCha
 const floodable_js_1 = require("./floodable.js");
 const settings_js_1 = require("./settings.js");
 const jimpable_js_1 = require("./jimpable.js");
-function getLineCharBounds(img, avgCharBounds, firstCharBounds, lastCharBoundsList = []) {
+function getLineCharBounds(img, avgCharBounds, firstCharBounds, lastCharBoundsList) {
     const boundsList = [firstCharBounds];
     const yBuffer = (0, settings_js_1.getSetting)("charBounds.yBuffer.individual");
     const vLookaroundU = (0, settings_js_1.getSetting)("charBounds.lookaround.vertical-up");
@@ -358,8 +358,8 @@ function getAverageCharBounds(boundsList) {
     widths.sort();
     heights.sort();
     return {
-        w: getMiddle(widths),
-        h: getMiddle(heights)
+        w: Math.round(getMiddle(widths)),
+        h: Math.round(getMiddle(heights))
     };
 }
 exports.getAverageCharBounds = getAverageCharBounds;

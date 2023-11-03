@@ -1,10 +1,11 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.setPixelAt = exports.getPixelAt = exports.highlightLines = exports.horizontalPrune = exports.destring = exports.denoise = exports.simplify = void 0;
+exports.setPixelAt = exports.getPixelAt = exports.getCharTokens = exports.highlightChars = exports.horizontalPrune = exports.destring = exports.denoise = exports.simplify = void 0;
 const settings_js_1 = require("./settings.js");
 const floodable_js_1 = require("./floodable.js");
 const boundable_js_1 = require("./boundable.js");
 const prunable_js_1 = require("./prunable.js");
+const spaceable_js_1 = require("./spaceable.js");
 function simplify(img) {
     const rWeight = (0, settings_js_1.getSetting)("simplify.weights.r");
     const gWeight = (0, settings_js_1.getSetting)("simplify.weights.g");
@@ -139,14 +140,35 @@ function horizontalPrune(img) {
     return img;
 }
 exports.horizontalPrune = horizontalPrune;
-// look for top-left (pure) black px
-function highlightLines(img, applyToImg = null) {
-    if (!applyToImg)
-        applyToImg = img; // algorithm gets clean input, highlight gets more original data
+// more for testing than anything else
+function highlightChars(img, tokens) {
+    for (const line of tokens) {
+        for (const token of line) {
+            if (token.value != " ") {
+                img.scan(token.bounds.x, token.bounds.y, token.bounds.w, token.bounds.h, (x, y, idx) => {
+                    if (img.bitmap.data[idx] != 0) {
+                        setPixelAt(img, x, y, 0xA0);
+                    }
+                });
+            }
+            for (let x = token.bounds.x; x <= token.bounds.x2; x++) {
+                setPixelAt(img, x, token.bounds.y, 0xFF, true);
+                setPixelAt(img, x, token.bounds.y2, 0xFF, true);
+            }
+            for (let y = token.bounds.y; y <= token.bounds.y2; y++) {
+                setPixelAt(img, token.bounds.x, y, 0xFF, true);
+                setPixelAt(img, token.bounds.x2, y, 0xFF, true);
+            }
+        }
+    }
+    return img;
+}
+exports.highlightChars = highlightChars;
+function getCharTokens(img) {
     const bounds = (0, settings_js_1.getSetting)("charBounds.charSize");
     let avgChar = {
-        w: bounds.x,
-        h: bounds.y
+        w: Math.round(bounds.x),
+        h: Math.round(bounds.y)
     };
     if (bounds.x == 0 && bounds.y == 0) {
         const firstBounds = (0, boundable_js_1.getLineCharBoundsBlind)(img, 0, img.bitmap.height);
@@ -156,28 +178,13 @@ function highlightLines(img, applyToImg = null) {
     const firstCharBoundsList = (0, boundable_js_1.getLineFirstCharBounds)(img, avgChar);
     const boundsList = [];
     for (const firstCharBounds of firstCharBoundsList) {
-        boundsList.push((0, boundable_js_1.getLineCharBounds)(img, avgChar, firstCharBounds, boundsList[boundsList.length - 1]));
+        boundsList.push((0, boundable_js_1.getLineCharBounds)(img, avgChar, firstCharBounds, boundsList[boundsList.length - 1] ?? []));
     }
-    for (const boundsLine of boundsList) {
-        for (const bounds of boundsLine) {
-            applyToImg.scan(bounds.x, bounds.y, bounds.w, bounds.h, (x, y, idx) => {
-                if (applyToImg.bitmap.data[idx] != 0) {
-                    setPixelAt(applyToImg, x, y, 0xA0);
-                }
-            });
-            for (let x = bounds.x; x <= bounds.x2; x++) {
-                setPixelAt(applyToImg, x, bounds.y, 0xFF, true);
-                setPixelAt(applyToImg, x, bounds.y2, 0xFF, true);
-            }
-            for (let y = bounds.y; y <= bounds.y2; y++) {
-                setPixelAt(applyToImg, bounds.x, y, 0xFF, true);
-                setPixelAt(applyToImg, bounds.x2, y, 0xFF, true);
-            }
-        }
-    }
-    return applyToImg;
+    const origin = (0, spaceable_js_1.getTextOrigion)(boundsList);
+    const tokens = (0, spaceable_js_1.tokenizeBounds)(boundsList, origin, avgChar);
+    return tokens;
 }
-exports.highlightLines = highlightLines;
+exports.getCharTokens = getCharTokens;
 function getPixelAt(img, x, y, fallback = 0xFF) {
     if (x < 0 || y < 0 || x >= img.bitmap.width || y >= img.bitmap.height) {
         return fallback;
