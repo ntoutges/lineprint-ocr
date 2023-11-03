@@ -42,6 +42,7 @@ function tokenizeBounds(boundsList, origin, avgCharSize) {
         const firstChar = line[0];
         const gapY = firstChar.y - lastCharY;
         const heightFactor = Math.round(gapY / avgCharSize.h); // this should be 0/1 for no space, then 2+ for 1+ spaces
+        lastCharY = firstChar.y;
         for (let j = 1; j < heightFactor; j++) { // loop [heightFactor-1] times
             tokens.push([]); // no chars needed--empty line
         }
@@ -64,13 +65,18 @@ function tokenizeBounds(boundsList, origin, avgCharSize) {
                         y: bounds.y,
                         y2: bounds.y + avgCharSize.h
                     },
-                    value: " " // value is known
+                    value: " ",
+                    center: {
+                        x: 0,
+                        y: 0
+                    }
                 });
             }
             // push actual character
             localTokens.push({
                 bounds,
-                value: null // value unknown
+                value: null,
+                center: null
             });
             lastCharX = bounds.x;
         }

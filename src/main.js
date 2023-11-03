@@ -2,10 +2,14 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.main = void 0;
 const Jimp = require("jimp");
+const fs = require("fs");
 const fsExt_js_1 = require("./fsExt.js");
 const jimpable_js_1 = require("./jimpable.js");
 const timer_js_1 = require("./timer.js");
 const settings_js_1 = require("./settings.js");
+const textable_js_1 = require("./textable.js");
+const tokenable_js_1 = require("./tokenable.js");
+const trainable_js_1 = require("./trainable.js");
 function main(args, namedArgs) {
     if (args.length == 0) { // read all
         args = (0, fsExt_js_1.getAllFiles)(["png"]);
@@ -16,7 +20,7 @@ function main(args, namedArgs) {
     for (const filename of args) {
         console.log(`: Processing [${filename}]`);
         promises.push(new Promise((resolve, reject) => {
-            doConversion((0, fsExt_js_1.toAbsoluteInput)(filename), (0, fsExt_js_1.toAbsoluteOutput)(filename), filename).then((result) => {
+            doConversion((0, fsExt_js_1.toAbsoluteInput)(filename), (0, fsExt_js_1.toAbsoluteOutput)(filename), filename, namedArgs).then((result) => {
                 console.log(`: Completed [${filename}] with output of \"${result}\"`);
                 resolve(result);
             }).catch(err => { reject(err); });
@@ -29,7 +33,7 @@ function main(args, namedArgs) {
     }).catch(err => { console.error(err); });
 }
 exports.main = main;
-function doConversion(input, output, name) {
+function doConversion(input, output, name, namedArgs) {
     return new Promise((resolve, reject) => {
         try {
             (0, timer_js_1.startTimer)();
@@ -46,10 +50,19 @@ function doConversion(input, output, name) {
                 const tokens = (0, jimpable_js_1.getCharTokens)(pruned.clone());
                 writeMessage("tokenized", name);
                 if ((0, settings_js_1.getSetting)("charHighlight.doOutputBounds")) {
-                    const bounded = (0, jimpable_js_1.highlightChars)(img.clone(), tokens);
+                    const bounded = (0, jimpable_js_1.highlightChars)(destrung.clone(), tokens);
                     writeMessage("highlighted", name);
                     bounded.write(output);
                 }
+                (0, tokenable_js_1.fillTokenImages)(destrung, tokens);
+                writeMessage("separated images", name);
+                if ("train" in namedArgs) {
+                    (0, tokenable_js_1.fillKnownTokens)(tokens, fs.readFileSync(__dirname + "/../io/input/009.txt").toString());
+                    const categorized = (0, tokenable_js_1.categorizeTokens)(tokens);
+                    (0, tokenable_js_1.writeCategorizedImages)(__dirname + "/../io/output/training", categorized);
+                    (0, trainable_js_1.constructTrainingDataset)(categorized, namedArgs.train);
+                }
+                fs.writeFileSync((0, fsExt_js_1.setExt)(output, "txt"), (0, textable_js_1.toText)(tokens, "?"));
                 resolve("Ok.");
             });
         }

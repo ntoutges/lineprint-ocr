@@ -5,7 +5,7 @@ const settings_js_1 = require("./settings.js");
 const floodable_js_1 = require("./floodable.js");
 const boundable_js_1 = require("./boundable.js");
 const prunable_js_1 = require("./prunable.js");
-const spaceable_js_1 = require("./spaceable.js");
+const tokenable_js_1 = require("./tokenable.js");
 function simplify(img) {
     const rWeight = (0, settings_js_1.getSetting)("simplify.weights.r");
     const gWeight = (0, settings_js_1.getSetting)("simplify.weights.g");
@@ -180,8 +180,8 @@ function getCharTokens(img) {
     for (const firstCharBounds of firstCharBoundsList) {
         boundsList.push((0, boundable_js_1.getLineCharBounds)(img, avgChar, firstCharBounds, boundsList[boundsList.length - 1] ?? []));
     }
-    const origin = (0, spaceable_js_1.getTextOrigion)(boundsList);
-    const tokens = (0, spaceable_js_1.tokenizeBounds)(boundsList, origin, avgChar);
+    const origin = (0, tokenable_js_1.getTextOrigion)(boundsList);
+    const tokens = (0, tokenable_js_1.tokenizeBounds)(boundsList, origin, avgChar);
     return tokens;
 }
 exports.getCharTokens = getCharTokens;

@@ -4,7 +4,7 @@ import { getSetting } from "./settings.js";
 import { Bounds, floodFill, floodFillAdd, floodFillBeyond, floodFillUntil } from "./floodable.js";
 import { getAverageCharBounds, getLineCharBounds, getLineCharBoundsBlind, getLineFirstCharBounds } from "./boundable.js";
 import { categorizeRegions, getPrunableRegions, getRegions, groupRegions, prunePrunableRegions } from "./prunable.js";
-import { Token, getLeftmostBound, getTextOrigion, tokenizeBounds } from "./spaceable.js";
+import { Token, getLeftmostBound, getTextOrigion, tokenizeBounds } from "./tokenable.js";
 
 export function simplify(img: Jimp) {
   const rWeight = getSetting<number>("simplify.weights.r");

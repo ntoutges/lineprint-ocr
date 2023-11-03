@@ -1,9 +1,13 @@
 import Jimp = require("jimp");
+const fs = require("fs");
 
-import { appendToName, getAllFiles, toAbsoluteInput, toAbsoluteOutput } from "./fsExt.js";
+import { appendToName, getAllFiles, setExt, toAbsoluteInput, toAbsoluteOutput } from "./fsExt.js";
 import { denoise, destring, getCharTokens, highlightChars, horizontalPrune, simplify } from "./jimpable.js";
 import { lap, startTimer } from "./timer.js";
 import { getSetting } from "./settings.js";
+import { toText } from "./textable.js";
+import { categorizeTokens, fillKnownTokens, fillTokenImages, writeCategorizedImages, writeTokenImages } from "./tokenable.js";
+import { addToTrainingDataset, constructTrainingDataset } from "./trainable.js";
 
 export function main(args: string[], namedArgs: Record<string,string>) {
   if (args.length == 0) { // read all
@@ -20,7 +24,8 @@ export function main(args: string[], namedArgs: Record<string,string>) {
         doConversion(
           toAbsoluteInput(filename),
           toAbsoluteOutput(filename),
-          filename
+          filename,
+          namedArgs
         ).then((result) => {
           console.log(`: Completed [${filename}] with output of \"${result}\"`);
           resolve(result);
@@ -34,13 +39,20 @@ export function main(args: string[], namedArgs: Record<string,string>) {
     const delta = Math.round((end - start) / 10) / 100
 
     console.log(`::Processed ${args.length} ${args.length == 1 ? "file" : "files"} in ${delta}s`);
+
+    if ("train" in namedArgs) {
+      console.log(": Constructing training dataset");
+      constructTrainingDataset(namedArgs.train);
+      console.log("::Constructed training dataset");
+    }
   }).catch(err => { console.error(err); })
 }
 
 function doConversion(
   input: string,
   output: string,
-  name: string
+  name: string,
+  namedArgs: Record<string,string>
 ) {
   return new Promise<string>((resolve,reject) => {
     try {
@@ -61,10 +73,23 @@ function doConversion(
         writeMessage("tokenized", name);
 
         if (getSetting("charHighlight.doOutputBounds")) {
-          const bounded = highlightChars(img.clone(), tokens);
+          const bounded = highlightChars(destrung.clone(), tokens);
           writeMessage("highlighted", name)
           bounded.write(output)
         }
+
+        fillTokenImages(destrung, tokens);
+        writeMessage("separated images", name)
+        
+        if ("train" in namedArgs) {
+          fillKnownTokens(tokens, fs.readFileSync(__dirname + "/../io/input/009.txt").toString());
+          const categorized = categorizeTokens(tokens);
+          writeCategorizedImages(__dirname + "/../io/output/training", categorized);
+
+          addToTrainingDataset(categorized);
+        }
+        
+        fs.writeFileSync(setExt(output, "txt"), toText(tokens, "?"));
 
         resolve("Ok.");
       });
