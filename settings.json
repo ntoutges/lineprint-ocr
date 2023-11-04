@@ -25,6 +25,7 @@
     }
   },
   "charBounds": {
+    "max-x-portion": 0.5, // maximum distances from the left to be considered a character
     "charSize": { // leave components at '0' to calculate automatically
       "x": 59,
       "y": 67
@@ -42,17 +43,19 @@
     }
   },
   "charHighlight": {
-    "doOutputBounds": true
+    "doOutputBounds": false
   },
   "recognition": {
     // amount that the progam will try to move the image to the center
     "x-center-weight": 1,
-    "y-center-weight": 0.5 // 0 means y-centering won't apply at all
+    "y-center-weight": 0.5, // 0 means y-centering won't apply at all
+    "doOutputIndividual": false
   },
   "postprocessing": {
     "enabled": {
       ";/: Correction": true,
-      "B/8 Correction": true
+      "B/8 Correction": false,
+      "B/8 Replacement": false
     },
     "settings": {
       ";/: Correction": {
@@ -61,8 +64,23 @@
       "B/8 Correction": {
         "min-ratio": 1.5, // "B/8" must be less than [] units from a "8/B" for change to occur
         "flatness-smoothing": 15,
-        "threshold": 5 // at or above this, number:8, below, char:B
+        "threshold": 6, // at or above this, number:8, below, char:B
+        "top-bottom-buffer": 0 // prevent top or bottom of number coming into flatness calculation
+      },
+      "B/8 Replacement": { // "null" indicates unknown
+        "b-replacement-char": null,
+        "8-replacement-char": null
       }
     }
+  },
+  "combination": {
+    "do-combination": true,
+    "outfile": "out.txt",
+    "file-seperator": "\n", // separates the end of one file from the start of the next
+    "disregard-header": true, // ignore first line of each page
+    "autocorrect": {
+      ".8YTE": ".BYTE"
+    },
+    "prompt-unknown": ["B", "8"] // array of all characters to prompt user on
   }
 }

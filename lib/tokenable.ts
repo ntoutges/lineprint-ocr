@@ -157,12 +157,12 @@ export function fillKnownTokens(
   text: string
 ) {
   // remove spaces/empty lines from text (they serve no purpose, besides formatting when initially putting in text); split into lines
-  const textLines = text.replace(/ |\r|\n\n|/g, "").split("\n");
+  const textLines = text.replace(/ +|\r|/g, "").replace(/\n\n+/g, "\n").split("\n");
   let line = 0;
   for (const i in tokens) {
     if (tokens[i].length == 0) continue; // ignore line
     if (line >= textLines.length) {
-      console.log(`WARNING: known text has less lines than tokens implies. ${line} vs ${textLines.length}`);
+      console.log(`WARNING: known text has less lines than tokens implies. ${line+1} vs ${textLines.length}`);
       break; // out of known text
     }
 

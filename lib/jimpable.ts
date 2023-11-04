@@ -194,6 +194,7 @@ export function highlightChars(img: Jimp, tokens: Token[][]) {
 
 export function getCharTokens(img: Jimp) {
   const bounds = getSetting<{x:number, y:number}>("charBounds.charSize");
+  const maxX = Math.round(getSetting<number>("charBounds.max-x-portion") * img.bitmap.width);
   
   let avgChar = {
     w: Math.round(bounds.x),
@@ -205,7 +206,7 @@ export function getCharTokens(img: Jimp) {
     console.log("Character Bounds: ", avgChar)
   }
 
-  const firstCharBoundsList = getLineFirstCharBounds(img, avgChar);
+  const firstCharBoundsList = getLineFirstCharBounds(img, avgChar, maxX);
   const boundsList: Bounds[][] = [];
   for (const firstCharBounds of firstCharBoundsList) {
     boundsList.push(

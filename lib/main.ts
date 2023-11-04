@@ -9,6 +9,7 @@ import { toText } from "./textable.js";
 import { categorizeTokens, fillKnownTokens, fillTokenImages, writeCategorizedImages, writeTokenImages } from "./tokenable.js";
 import { addToTrainingDataset, constructTrainingDataset, recognizeFromTrainingDataset } from "./trainable.js";
 import { TokenText, doPostProcess } from "./postprocessable.js";
+import { addToCombo, finalizeCombo } from "./combinator.js";
 
 export function main(args: string[], namedArgs: Record<string,string>) {
   if (args.length == 0) { // read all
@@ -17,6 +18,7 @@ export function main(args: string[], namedArgs: Record<string,string>) {
   
   const start = (new Date()).getTime();
   const promises: Promise<string>[] = [];
+  let index = 0;
   for (const filename of args) {
     console.log(`: Processing [${filename}]`);
     promises.push(
@@ -25,9 +27,11 @@ export function main(args: string[], namedArgs: Record<string,string>) {
           toAbsoluteInput(filename),
           toAbsoluteOutput(filename),
           filename,
+          index++,
           namedArgs
         ).then((result) => {
           console.log(`: Completed [${filename}] with output of \"${result}\"`);
+
           resolve(result);
         }).catch(err => { reject(err); })
       })
@@ -40,10 +44,16 @@ export function main(args: string[], namedArgs: Record<string,string>) {
 
     console.log(`::Processed ${args.length} ${args.length == 1 ? "file" : "files"} in ${delta}s`);
 
+    const doCombo = getSetting<boolean>("combination.do-combination");
+
     if ("train" in namedArgs) {
       console.log(": Constructing training dataset");
       const output = await constructTrainingDataset();
       console.log(`::Constructed training dataset with output of \"${output}\"`);
+    }
+    else  if (doCombo) {
+      console.log(": Writing combination file");
+      finalizeCombo().then((result) => { console.log("Finished!"); });
     }
   }).catch(err => { console.error(err); })
 }
@@ -52,8 +62,11 @@ function doConversion(
   input: string,
   output: string,
   name: string,
+  index: number,
   namedArgs: Record<string,string>
 ) {
+  const doCombo = getSetting<boolean>("combination.do-combination");
+
   return new Promise<string>((resolve,reject) => {
     try {
       startTimer();
@@ -101,7 +114,13 @@ function doConversion(
 
             // writeTokenImages(__dirname + "/../io/output/preview", tokens); // print out formated characters; testing
             writeMessage("compared characters", name);
-            fs.writeFileSync(setExt(output, "txt"), tokenText.toString()); // don't write output file if learning
+
+            const doOutputIndividual = getSetting<boolean>("recognition.doOutputIndividual");
+
+            const str = tokenText.toString();
+            if (doOutputIndividual) fs.writeFileSync(setExt(output, "txt"), str); // don't write output file if learning
+            if (doCombo) addToCombo(index, str);
+
             resolve("Ok.");
           });
         }

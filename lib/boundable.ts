@@ -218,9 +218,11 @@ function getOverlappingBound(
   return null;
 }
 
+// get first character in a line of characters
 export function getLineFirstCharBounds(
   img: Jimp,
-  avgCharBounds: { w: number, h: number }
+  avgCharBounds: { w: number, h: number },
+  maxX: number
 ) {
   const lookaroundU = getSetting<number>("charBounds.lookaround.vertical-up");
   const lookaroundD = getSetting<number>("charBounds.lookaround.vertical-down");
@@ -231,11 +233,10 @@ export function getLineFirstCharBounds(
   
   let minY = yBuffer;
   const maxY = img.bitmap.height;
-  const maxX = img.bitmap.width;
 
   // while loop, but with built-in max itteration count
   for (let i = 0; i < 200; i++) {
-    const line = getTopLine(img, minY);
+    const line = getTopLine(img, minY, maxX);
     if (line >= maxY) break; // no other black pixels available
 
     const midpoint = line + Math.floor(avgCharBounds.h / 2);
@@ -380,10 +381,11 @@ function splitBoundHorizontally(
 
 export function getTopLine(
   img: Jimp,
-  minY: number
+  minY: number,
+  maxX: number
 ) {
   for (let y = minY; y < img.bitmap.height; y++) {
-    for (let x = 0; x < img.bitmap.width; x++) {
+    for (let x = 0; x < maxX; x++) {
       const idx = 4*(x + y*img.bitmap.width);
       if (img.bitmap.data[idx] == 0) return y;
     }

@@ -40,11 +40,11 @@ export class TokenText {
   }
 
   setChar(line: number, index: number, char: string) {
-    this.getToken(line,index).value = char[0]; // ensure char is only one character
+    this.getToken(line,index).value = (char == null) ? null : char[0]; // ensure char is only one character
     
     // recalculate text
     let text = "";
-    for (const token of this.lines[line].tokens) { text += token.value; }
+    for (const token of this.lines[line].tokens) { text += (token.value == null) ? "?" : token.value; }
     this.lines[line].text = text;
   }
 
@@ -65,6 +65,7 @@ export function doPostProcess(tokenText: TokenText) {
       console.log(`: PostProcess Step: \"\x1b[31m${step}\x1b[0m\" does not exist`);  
       continue;
     }
+    if (!toDoMap[step]) continue;
     const specificSetting = getSetting<Record<string,any>>(`postprocessing.settings.${step}`, {});
     console.log(`: PostProcess Step: \"\x1b[32m${step}\x1b[0m\"`);
     steps[step](tokenText, specificSetting);
