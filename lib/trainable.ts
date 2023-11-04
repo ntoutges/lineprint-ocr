@@ -146,10 +146,16 @@ export async function recognizeFromTrainingDataset(tokens: Token[][]) {
         }
 
         const distance = getImageDifference(formatedTestImg, refImage);
+        token.distances[char] = distance; // store raw distances; to be divided later
         if (distance < minDistance) { // find best character
           minDistance = distance;
           minChar = char;
         }
+      }
+
+      if (minDistance == 0) minDistance = 1; // prevent divide-by-zero errors
+      for (const char in token.distances) {
+        token.distances[char] = token.distances[char] / minDistance; // normalize with respect to ;minDistance'
       }
 
       // assign best character

@@ -14,7 +14,7 @@ export function init() {
   });
 }
 
-export function getSetting<T>(keyStr: string, fallback: any = undefined): T {
+export function getSetting<T>(keyStr: string, fallback: T = undefined): T {
   const keyArr = keyStr.split(".");
   let head = settings;
   for (const key of keyArr) {

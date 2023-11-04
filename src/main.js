@@ -7,9 +7,9 @@ const fsExt_js_1 = require("./fsExt.js");
 const jimpable_js_1 = require("./jimpable.js");
 const timer_js_1 = require("./timer.js");
 const settings_js_1 = require("./settings.js");
-const textable_js_1 = require("./textable.js");
 const tokenable_js_1 = require("./tokenable.js");
 const trainable_js_1 = require("./trainable.js");
+const postprocessable_js_1 = require("./postprocessable.js");
 function main(args, namedArgs) {
     if (args.length == 0) { // read all
         args = (0, fsExt_js_1.getAllFiles)(["png"]);
@@ -59,7 +59,9 @@ function doConversion(input, output, name, namedArgs) {
                     const bounded = (0, jimpable_js_1.highlightChars)(destrung.clone(), tokens);
                     writeMessage("highlighted", name);
                     bounded.write(output);
+                    writeMessage("wrote highlighted", name);
                 }
+                // NOTE: this program cannot work when the first character is not full (ie: ;/:)
                 (0, tokenable_js_1.fillTokenImages)(destrung, tokens);
                 writeMessage("separated images", name);
                 if ("train" in namedArgs) {
@@ -69,13 +71,15 @@ function doConversion(input, output, name, namedArgs) {
                     // writeCategorizedImages(__dirname + "/../io/output/training", categorized);
                     writeMessage("wrote images", name);
                     (0, trainable_js_1.addToTrainingDataset)(categorized);
-                    resolve("Training Complete.");
+                    resolve("Imported Characters.");
                 }
                 else {
                     (0, trainable_js_1.recognizeFromTrainingDataset)(tokens).then(tokens => {
-                        // writeTokenImages(__dirname + "/../io/output/preview", tokens); // print out formated characters
+                        const tokenText = new postprocessable_js_1.TokenText(tokens);
+                        (0, postprocessable_js_1.doPostProcess)(tokenText);
+                        // writeTokenImages(__dirname + "/../io/output/preview", tokens); // print out formated characters; testing
                         writeMessage("compared characters", name);
-                        fs.writeFileSync((0, fsExt_js_1.setExt)(output, "txt"), (0, textable_js_1.toText)(tokens, "?")); // don't write output file if learning
+                        fs.writeFileSync((0, fsExt_js_1.setExt)(output, "txt"), tokenText.toString()); // don't write output file if learning
                         resolve("Ok.");
                     });
                 }

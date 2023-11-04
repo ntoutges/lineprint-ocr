@@ -46,7 +46,8 @@ export type Token = {
   center: {
     x: number,
     y: number
-  }
+  },
+  distances: Record<string, number>
 }
 
 export function tokenizeBounds(
@@ -93,15 +94,18 @@ export function tokenizeBounds(
           center: { // value doesn't actually matter
             x: 0,
             y: 0
-          }
+          },
+          distances: {}
         });
       }
 
       // push actual character
+      if (bounds.h < 0) console.log(bounds)
       localTokens.push({
         bounds,
         value: null, // value unknown
-        center: null
+        center: null,
+        distances: {}
       });
 
       lastCharX = bounds.x;
@@ -160,6 +164,12 @@ export function fillKnownTokens(
     if (line >= textLines.length) {
       console.log(`WARNING: known text has less lines than tokens implies. ${line} vs ${textLines.length}`);
       break; // out of known text
+    }
+
+    if (textLines[line]?.trim() == "/**/") { // skip
+      console.log(`Skipping line #${line+1}`);
+      line++;
+      continue;
     }
     
     let index = 0;

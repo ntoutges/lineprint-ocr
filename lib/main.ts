@@ -8,6 +8,7 @@ import { getSetting } from "./settings.js";
 import { toText } from "./textable.js";
 import { categorizeTokens, fillKnownTokens, fillTokenImages, writeCategorizedImages, writeTokenImages } from "./tokenable.js";
 import { addToTrainingDataset, constructTrainingDataset, recognizeFromTrainingDataset } from "./trainable.js";
+import { TokenText, doPostProcess } from "./postprocessable.js";
 
 export function main(args: string[], namedArgs: Record<string,string>) {
   if (args.length == 0) { // read all
@@ -74,10 +75,12 @@ function doConversion(
 
         if (getSetting("charHighlight.doOutputBounds")) {
           const bounded = highlightChars(destrung.clone(), tokens);
-          writeMessage("highlighted", name)
-          bounded.write(output)
+          writeMessage("highlighted", name);
+          bounded.write(output);
+          writeMessage("wrote highlighted", name)
         }
 
+        // NOTE: this program cannot work when the first character is not full (ie: ;/:)
         fillTokenImages(destrung, tokens);
         writeMessage("separated images", name)
         
@@ -89,13 +92,16 @@ function doConversion(
           writeMessage("wrote images", name);
 
           addToTrainingDataset(categorized);
-          resolve("Training Complete.");
+          resolve("Imported Characters.");
         }
         else {
           recognizeFromTrainingDataset(tokens).then(tokens => {
-            // writeTokenImages(__dirname + "/../io/output/preview", tokens); // print out formated characters
+            const tokenText = new TokenText(tokens);
+            doPostProcess(tokenText);
+
+            // writeTokenImages(__dirname + "/../io/output/preview", tokens); // print out formated characters; testing
             writeMessage("compared characters", name);
-            fs.writeFileSync(setExt(output, "txt"), toText(tokens, "?")); // don't write output file if learning
+            fs.writeFileSync(setExt(output, "txt"), tokenText.toString()); // don't write output file if learning
             resolve("Ok.");
           });
         }

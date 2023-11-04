@@ -47,6 +47,22 @@
   "recognition": {
     // amount that the progam will try to move the image to the center
     "x-center-weight": 1,
-    "y-center-weight": 0 // 0 means y-centering won't apply at all
+    "y-center-weight": 0.5 // 0 means y-centering won't apply at all
+  },
+  "postprocessing": {
+    "enabled": {
+      ";/: Correction": true,
+      "B/8 Correction": true
+    },
+    "settings": {
+      ";/: Correction": {
+        "min-ratio": 1.5 // ":/;" must be less than [] units from a ";/:" for change to occur
+      },
+      "B/8 Correction": {
+        "min-ratio": 1.5, // "B/8" must be less than [] units from a "8/B" for change to occur
+        "flatness-smoothing": 15,
+        "threshold": 5 // at or above this, number:8, below, char:B
+      }
+    }
   }
 }
