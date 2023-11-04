@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.toAbsoluteOutput = exports.toAbsoluteInput = exports.appendToName = exports.setExt = exports.getAllFiles = void 0;
+exports.toAbsoluteOutput = exports.toAbsoluteInput = exports.appendToName = exports.extensionless = exports.setExt = exports.getAllFiles = void 0;
 const fs = require("fs");
 function getAllFiles(validTypes) {
     const validSet = new Set(validTypes);
@@ -27,6 +27,13 @@ function setExt(filename, ext) {
     return filename.substring(0, i) + "." + ext;
 }
 exports.setExt = setExt;
+function extensionless(filename) {
+    const i = filename.lastIndexOf(".");
+    if (i == -1)
+        return filename; // implicit
+    return filename.substring(0, i);
+}
+exports.extensionless = extensionless;
 function appendToName(filename, append) {
     const i = filename.lastIndexOf(".");
     if (i == -1)

@@ -14,7 +14,6 @@ function main(args, namedArgs) {
     if (args.length == 0) { // read all
         args = (0, fsExt_js_1.getAllFiles)(["png"]);
     }
-    // args = args.map((filename) => { return toAbsoluteInput(filename); }); // convert to absolute path
     const start = (new Date()).getTime();
     const promises = [];
     for (const filename of args) {
@@ -26,10 +25,15 @@ function main(args, namedArgs) {
             }).catch(err => { reject(err); });
         }));
     }
-    Promise.all(promises).then(result => {
+    Promise.all(promises).then(async (result) => {
         const end = (new Date()).getTime();
         const delta = Math.round((end - start) / 10) / 100;
         console.log(`::Processed ${args.length} ${args.length == 1 ? "file" : "files"} in ${delta}s`);
+        if ("train" in namedArgs) {
+            console.log(": Constructing training dataset");
+            const output = await (0, trainable_js_1.constructTrainingDataset)();
+            console.log(`::Constructed training dataset with output of \"${output}\"`);
+        }
     }).catch(err => { console.error(err); });
 }
 exports.main = main;
@@ -38,6 +42,8 @@ function doConversion(input, output, name, namedArgs) {
         try {
             (0, timer_js_1.startTimer)();
             Jimp.read(input, (err, img) => {
+                if (err)
+                    console.error(err);
                 writeMessage(`successfully read`, name);
                 const simplified = (0, jimpable_js_1.simplify)(img);
                 writeMessage("simplified", name);
@@ -57,13 +63,22 @@ function doConversion(input, output, name, namedArgs) {
                 (0, tokenable_js_1.fillTokenImages)(destrung, tokens);
                 writeMessage("separated images", name);
                 if ("train" in namedArgs) {
-                    (0, tokenable_js_1.fillKnownTokens)(tokens, fs.readFileSync(__dirname + "/../io/input/009.txt").toString());
+                    const txtFile = __dirname + "/../io/input/" + (0, fsExt_js_1.extensionless)(name) + ".txt";
+                    (0, tokenable_js_1.fillKnownTokens)(tokens, fs.readFileSync(txtFile).toString());
                     const categorized = (0, tokenable_js_1.categorizeTokens)(tokens);
-                    (0, tokenable_js_1.writeCategorizedImages)(__dirname + "/../io/output/training", categorized);
-                    (0, trainable_js_1.constructTrainingDataset)(categorized, namedArgs.train);
+                    // writeCategorizedImages(__dirname + "/../io/output/training", categorized);
+                    writeMessage("wrote images", name);
+                    (0, trainable_js_1.addToTrainingDataset)(categorized);
+                    resolve("Training Complete.");
                 }
-                fs.writeFileSync((0, fsExt_js_1.setExt)(output, "txt"), (0, textable_js_1.toText)(tokens, "?"));
-                resolve("Ok.");
+                else {
+                    (0, trainable_js_1.recognizeFromTrainingDataset)(tokens).then(tokens => {
+                        // writeTokenImages(__dirname + "/../io/output/preview", tokens); // print out formated characters
+                        writeMessage("compared characters", name);
+                        fs.writeFileSync((0, fsExt_js_1.setExt)(output, "txt"), (0, textable_js_1.toText)(tokens, "?")); // don't write output file if learning
+                        resolve("Ok.");
+                    });
+                }
             });
         }
         catch (err) {

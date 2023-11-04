@@ -1,20 +1,19 @@
 import Jimp = require("jimp");
 const fs = require("fs");
 
-import { appendToName, getAllFiles, setExt, toAbsoluteInput, toAbsoluteOutput } from "./fsExt.js";
+import { appendToName, extensionless, getAllFiles, setExt, toAbsoluteInput, toAbsoluteOutput } from "./fsExt.js";
 import { denoise, destring, getCharTokens, highlightChars, horizontalPrune, simplify } from "./jimpable.js";
 import { lap, startTimer } from "./timer.js";
 import { getSetting } from "./settings.js";
 import { toText } from "./textable.js";
 import { categorizeTokens, fillKnownTokens, fillTokenImages, writeCategorizedImages, writeTokenImages } from "./tokenable.js";
-import { addToTrainingDataset, constructTrainingDataset } from "./trainable.js";
+import { addToTrainingDataset, constructTrainingDataset, recognizeFromTrainingDataset } from "./trainable.js";
 
 export function main(args: string[], namedArgs: Record<string,string>) {
   if (args.length == 0) { // read all
     args = getAllFiles(["png"]);
   }
-  // args = args.map((filename) => { return toAbsoluteInput(filename); }); // convert to absolute path
-
+  
   const start = (new Date()).getTime();
   const promises: Promise<string>[] = [];
   for (const filename of args) {
@@ -34,7 +33,7 @@ export function main(args: string[], namedArgs: Record<string,string>) {
     );
   }
 
-  Promise.all(promises).then(result => {
+  Promise.all(promises).then(async result => {
     const end = (new Date()).getTime();
     const delta = Math.round((end - start) / 10) / 100
 
@@ -42,8 +41,8 @@ export function main(args: string[], namedArgs: Record<string,string>) {
 
     if ("train" in namedArgs) {
       console.log(": Constructing training dataset");
-      constructTrainingDataset(namedArgs.train);
-      console.log("::Constructed training dataset");
+      const output = await constructTrainingDataset();
+      console.log(`::Constructed training dataset with output of \"${output}\"`);
     }
   }).catch(err => { console.error(err); })
 }
@@ -58,6 +57,7 @@ function doConversion(
     try {
       startTimer();
       Jimp.read(input, (err,img) => {
+        if (err) console.error(err);
         writeMessage(`successfully read`, name);
 
         const simplified = simplify(img);
@@ -82,16 +82,24 @@ function doConversion(
         writeMessage("separated images", name)
         
         if ("train" in namedArgs) {
-          fillKnownTokens(tokens, fs.readFileSync(__dirname + "/../io/input/009.txt").toString());
+          const txtFile = __dirname + "/../io/input/" + extensionless(name) + ".txt";
+          fillKnownTokens(tokens, fs.readFileSync(txtFile).toString());
           const categorized = categorizeTokens(tokens);
-          writeCategorizedImages(__dirname + "/../io/output/training", categorized);
+          // writeCategorizedImages(__dirname + "/../io/output/training", categorized);
+          writeMessage("wrote images", name);
 
           addToTrainingDataset(categorized);
+          resolve("Training Complete.");
         }
-        
-        fs.writeFileSync(setExt(output, "txt"), toText(tokens, "?"));
+        else {
+          recognizeFromTrainingDataset(tokens).then(tokens => {
+            // writeTokenImages(__dirname + "/../io/output/preview", tokens); // print out formated characters
+            writeMessage("compared characters", name);
+            fs.writeFileSync(setExt(output, "txt"), toText(tokens, "?")); // don't write output file if learning
+            resolve("Ok.");
+          });
+        }
 
-        resolve("Ok.");
       });
     }
     catch(err) { reject(err.toString()); }

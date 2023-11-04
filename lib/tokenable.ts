@@ -113,7 +113,10 @@ export function tokenizeBounds(
 }
 
 export function fillTokenImages(img: Jimp, tokens: Token[][]) {
+  let i = 0;
+  const lineCt = Object.keys(tokens).length;
   for (const line of tokens) {
+    process.stdout.write(`: ${++i}/${lineCt} lines processed\r`);
     for (const token of line) {
       if (token.value != null) continue; // only retrieve those whose value is unknown
       token.img = img.clone().crop(
@@ -125,16 +128,19 @@ export function fillTokenImages(img: Jimp, tokens: Token[][]) {
 
       let xWeight = 0;
       let yWeight = 0;
+      let total = 0;
       token.img.scan(0,0, token.img.bitmap.width, token.img.bitmap.height, (x,y,idx) => {
         if (token.img.bitmap.data[idx] == 0xFF) return; // ignore
         // add weights
         xWeight += x;
         yWeight += y;
+        total++;
       });
 
+      
       token.center = {
-        x: Math.floor(xWeight / token.img.bitmap.width),
-        y: Math.floor(yWeight / token.img.bitmap.height)
+        x: Math.floor(xWeight / total),
+        y: Math.floor(yWeight / total)
       };
     }
   }
@@ -147,12 +153,12 @@ export function fillKnownTokens(
   text: string
 ) {
   // remove spaces/empty lines from text (they serve no purpose, besides formatting when initially putting in text); split into lines
-  const textLines = text.replace(/ |\n\n/g, "").split("\n");
+  const textLines = text.replace(/ |\r|\n\n|/g, "").split("\n");
   let line = 0;
   for (const i in tokens) {
     if (tokens[i].length == 0) continue; // ignore line
     if (line >= textLines.length) {
-      console.log("WARNING: known text has less lines than tokens implies.");
+      console.log(`WARNING: known text has less lines than tokens implies. ${line} vs ${textLines.length}`);
       break; // out of known text
     }
     
@@ -160,7 +166,7 @@ export function fillKnownTokens(
     for (const j in tokens[i]) {
       if (tokens[i][j].value == " ") continue; // skip spaces
       if (index >= textLines[line].length) {
-        console.log(`WARNING: known text on line [${index}] has less chars than tokens implies.`);
+        console.log(`WARNING: known text on line [${line+1}] (${textLines[line]}) has less chars than tokens implies.`);
         break;
       }
       const knownChar = textLines[line][index];
@@ -168,15 +174,15 @@ export function fillKnownTokens(
       index++;
     }
     if (index < textLines[line].length-1) {
-      console.log(`WARNING: known text on line [${index}] has more chars than tokens implies.`);
-      break;
+      console.log(`WARNING: known text on line [${line+1}] (${textLines[line]}) has more chars than tokens implies.`);
+      line++;
+      continue;
     }
-
     line++;
   }
 
-  if (line < textLines.length-1) {
-    console.log("WARNING: known text has more lines than tokens implies.");
+  if (line+1 < textLines.length) {
+    console.log(`WARNING: known text has more lines than tokens implies. ${line+1} vs ${textLines.length}`);
   }
 
   return tokens;

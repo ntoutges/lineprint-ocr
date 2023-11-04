@@ -43,5 +43,10 @@
   },
   "charHighlight": {
     "doOutputBounds": true
+  },
+  "recognition": {
+    // amount that the progam will try to move the image to the center
+    "x-center-weight": 1,
+    "y-center-weight": 0 // 0 means y-centering won't apply at all
   }
 }

@@ -1,5 +1,6 @@
 const main = require("./src/main.js");
 const settings = require("./src/settings.js");
+const training = require("./src/trainable.js");
 
 const args = process.argv.slice(2);
 
@@ -24,7 +25,9 @@ function separateArgs(args) {
 const { unnamedArgs, namedArgs } = separateArgs(args);
 
 settings.init().then(() => {
-  main.main(unnamedArgs, namedArgs);
+  training.init().then(() => {
+    main.main(unnamedArgs, namedArgs);
+  });
 }).catch(err => {
   console.error(err);
 });

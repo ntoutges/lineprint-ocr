@@ -25,6 +25,12 @@ export function setExt(filename: string, ext: string) {
   return filename.substring(0,i) + "." + ext;
 }
 
+export function extensionless(filename: string) {
+  const i = filename.lastIndexOf(".");
+  if (i == -1) return filename; // implicit
+  return filename.substring(0,i);
+}
+
 export function appendToName(filename: string, append: string) {
   const i = filename.lastIndexOf(".");
   if (i == -1) return filename + append; // no extension
