@@ -8,12 +8,19 @@ import { getSetting } from "./settings.js";
 import { toText } from "./textable.js";
 import { categorizeTokens, fillKnownTokens, fillTokenImages, writeCategorizedImages, writeTokenImages } from "./tokenable.js";
 import { addToTrainingDataset, constructTrainingDataset, recognizeFromTrainingDataset } from "./trainable.js";
-import { TokenText, doPostProcess } from "./postprocessable.js";
+import { TokenText, doPostProcess, doPostProcess2 } from "./postprocessable.js";
 import { addToCombo, finalizeCombo } from "./combinator.js";
+import { getTilt } from "./boundable.js";
 
 export function main(args: string[], namedArgs: Record<string,string>) {
   if (args.length == 0) { // read all
     args = getAllFiles(["png"]);
+  }
+
+  if ("text" in namedArgs) {
+    console.log("Starting post-post processing");
+    doPostPostProcess(args);
+    return;
   }
   
   const start = (new Date()).getTime();
@@ -53,7 +60,11 @@ export function main(args: string[], namedArgs: Record<string,string>) {
     }
     else  if (doCombo) {
       console.log(": Writing combination file");
-      finalizeCombo().then((result) => { console.log("Finished!"); });
+      finalizeCombo().then((result) => {
+        console.log("Finished!");
+        const outfile = getSetting<string>("combination.outfile");
+        doPostPostProcess([outfile]);
+      });
     }
   }).catch(err => { console.error(err); })
 }
@@ -93,21 +104,39 @@ function doConversion(
           writeMessage("wrote highlighted", name)
         }
 
+        const doSeparate = getSetting<boolean>("recognition.do-separate");
+        if (!doSeparate) { // don't separate characters into individual images (this takes a LONG time); testing
+          resolve("Ok.");
+          return;
+        }
         // NOTE: this program cannot work when the first character is not full (ie: ;/:)
         fillTokenImages(destrung, tokens);
         writeMessage("separated images", name)
         
         if ("train" in namedArgs) {
-          const txtFile = __dirname + "/../io/input/" + extensionless(name) + ".txt";
-          fillKnownTokens(tokens, fs.readFileSync(txtFile).toString());
-          const categorized = categorizeTokens(tokens);
-          // writeCategorizedImages(__dirname + "/../io/output/training", categorized);
-          writeMessage("wrote images", name);
+          try {
+            const txtFile = __dirname + "/../io/input/" + extensionless(name) + ".txt";
+            fillKnownTokens(tokens, fs.readFileSync(txtFile).toString());
+            const categorized = categorizeTokens(tokens);
 
-          addToTrainingDataset(categorized);
-          resolve("Imported Characters.");
+            // writeCategorizedImages(__dirname + "/../io/output/training", categorized);
+            // writeMessage("wrote images", name);
+            
+            addToTrainingDataset(categorized);
+            
+            resolve("Imported Characters.");
+          }
+          catch(err) {
+            resolve(err.toString());
+          }
         }
         else {
+          const doRecognition = getSetting<boolean>("recognition.do-recognition");
+          if (!doRecognition) { // don't do recognition (takes a LONG time)
+            resolve("Ok");
+            return;
+          }
+
           recognizeFromTrainingDataset(tokens).then(tokens => {
             const tokenText = new TokenText(tokens);
             doPostProcess(tokenText);
@@ -138,4 +167,13 @@ function writeMessage(
   const time = lap();
   const timeStr = `${Math.round(time / 10) / 100}s`;
   console.log(`: [\x1b[36m${name}\x1b[0m] ${message} (\x1b[33m${timeStr}\x1b[0m)`);
+}
+
+function doPostPostProcess(infiles: string[]) {
+  for (const filename of infiles) {
+    console.log(`Post-post processing ${filename}`);
+    const text = fs.readFileSync(__dirname + "/../io/output/" + filename, { encoding: 'utf8', flag: 'r' }).toString();
+    const newText = doPostProcess2(text);
+    fs.writeFileSync(__dirname + "/../io/postoutput/" + filename, newText);
+  }
 }

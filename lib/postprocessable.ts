@@ -1,5 +1,6 @@
 import { Token } from "./tokenable.js";
-import { steps } from "./postprocessing.js";
+import { steps } from "./postprocessing.js"
+import { steps2 } from "./postprocessing2.js";
 import { getSetting } from "./settings.js";
 
 export class TokenText {
@@ -70,4 +71,20 @@ export function doPostProcess(tokenText: TokenText) {
     console.log(`: PostProcess Step: \"\x1b[32m${step}\x1b[0m\"`);
     steps[step](tokenText, specificSetting);
   }
+}
+
+// use both text and images as context for finishing the work
+export function doPostProcess2(text: string) {
+  const toDoMap = getSetting<Record<string,boolean>>("post-postprocessing.enabled", {});
+  for (const step in toDoMap) {
+    if (!(step in steps2)) { // step does not exist
+      console.log(`: PostPostProcess Step: \"\x1b[31m${step}\x1b[0m\" does not exist`);  
+      continue;
+    }
+    if (!toDoMap[step]) continue;
+    const specificSetting = getSetting<Record<string,any>>(`post-postprocessing.settings.${step}`, {});
+    console.log(`: PostPostProcess Step: \"\x1b[32m${step}\x1b[0m\"`);
+    text = steps2[step](text, specificSetting);
+  }
+  return text;
 }

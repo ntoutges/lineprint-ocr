@@ -30,7 +30,8 @@
       "x": 59,
       "y": 67
     },
-    "y-splitting-function": "first", // "last" | "first" | "avg"
+    "y-splitting-function": "first", // "last" | "first"
+    "y-bounds": "uniform", // "uniform" | "individual" | "mean" | "median"
     "xDiff": 10, // amount a pixel must be further left to be considered new
     "yBuffer": { // amount of pixels around the center line to check
       "total-offset": 20,
@@ -47,9 +48,13 @@
     }
   },
   "charHighlight": {
-    "doOutputBounds": true
+    "doOutputBounds": true,
+    "doHighlightSpace": false
   },
   "recognition": {
+    "do-separate": true, // quickly run program (testing)
+    "do-recognition": true, // quickly run program (testing)
+
     // amount that the progam will try to move the image to the center
     "x-center-weight": 1,
     "y-center-weight": 0.5, // 0 means y-centering won't apply at all
@@ -84,11 +89,28 @@
   "combination": {
     "do-combination": true,
     "outfile": "out.txt",
-    "file-seperator": "\n", // separates the end of one file from the start of the next
+    "file-seperator": "", // separates the end of one file from the start of the next
     "disregard-header": true, // ignore first line of each page
     "autocorrect": {
-      ".8YTE": ".BYTE"
+      ".8YTE": ".BYTE",
+      ".0EF": ".DEF",
+      "$": "S" // far too similar--these will be corrected by some post-post processing (I hope...)
     },
-    "prompt-unknown": ["B", "8"] // array of all characters to prompt user on
+    "prompt-unknown": [] // array of all characters to prompt user on
+  },
+
+  // reads from output/, writes to postoutput/
+  "post-postprocessing": { // uses only text data from a file, and relying on patterns // run individually with -text 1
+    "enabled": {
+      "$ recognition": true,
+      "format": true
+    },
+    "settings": {
+      "$ recognition": {},
+      "format": {
+        "sections": [ 0, 4, 13, 22, 30, 37, 53 ],
+        "wriggle-room": 2
+      }
+    }
   }
 }

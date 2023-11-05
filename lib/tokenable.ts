@@ -100,7 +100,6 @@ export function tokenizeBounds(
       }
 
       // push actual character
-      if (bounds.h < 0) console.log(bounds)
       localTokens.push({
         bounds,
         value: null, // value unknown
@@ -228,7 +227,7 @@ export function writeCategorizedImages(folder: string, tokens: Record<string, To
     let i = 0;
     for (const token of tokens[char]) {
       if (!token.img) continue;
-      token.img.write(`${folder}/${char}_${i++}.png`);
+      token.img.write(`${folder}/${char.charCodeAt(0)}_${token.bounds.y}_${i++}.png`);
     }
   }
 }

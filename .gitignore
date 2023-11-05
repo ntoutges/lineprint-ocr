@@ -2,6 +2,7 @@
 node_modules/
 io/input/*
 io/output/*
-io/training/*
+io/postoutput/*
+io/legacy-training/*
 src/*
 src../

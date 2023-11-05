@@ -2,7 +2,7 @@ import Jimp = require("jimp");
 
 import { getSetting } from "./settings.js";
 import { Bounds, floodFill, floodFillAdd, floodFillBeyond, floodFillUntil } from "./floodable.js";
-import { getAverageCharBounds, getLineCharBounds, getLineCharBoundsBlind, getLineFirstCharBounds } from "./boundable.js";
+import { getAverageCharBounds, getLineCharBounds, getLineCharBoundsBlind, getLineFirstCharBounds, getTilt } from "./boundable.js";
 import { categorizeRegions, getPrunableRegions, getRegions, groupRegions, prunePrunableRegions } from "./prunable.js";
 import { Token, getLeftmostBound, getTextOrigion, tokenizeBounds } from "./tokenable.js";
 
@@ -168,15 +168,18 @@ export function horizontalPrune(img: Jimp) {
 
 // more for testing than anything else
 export function highlightChars(img: Jimp, tokens: Token[][]) {
+  const highlightSpaces = getSetting<boolean>("charHighlight.doHighlightSpace");
   for (const line of tokens) {
     for (const token of line) {
       if (token.value != " ") {
         img.scan(token.bounds.x, token.bounds.y, token.bounds.w,token.bounds.h, (x,y,idx) => {
-          if (img.bitmap.data[idx] != 0) {
+          if (img.bitmap.data[idx] == 0xFF && img.bitmap.data[idx+1] == 0xFF && img.bitmap.data[idx+2] == 0xFF) {
+            // replace white
             setPixelAt(img, x,y, 0xA0);
           }
         });
       }
+      else if (!highlightSpaces) continue;
       
       for (let x = token.bounds.x; x <= token.bounds.x2; x++) {
         setPixelAt(img, x,token.bounds.y, 0xFF, true);
@@ -207,6 +210,15 @@ export function getCharTokens(img: Jimp) {
   }
 
   const firstCharBoundsList = getLineFirstCharBounds(img, avgChar, maxX);
+  const firstBounds = getLineCharBounds( // get line to find tilt from
+    img,avgChar,
+    firstCharBoundsList[0],[],0,
+    "individual"
+  );
+
+  const tilt = getTilt(firstBounds);
+  // console.log(`Found tilt of slope: ${tilt.toFixed(6)}`);
+  
   const boundsList: Bounds[][] = [];
   for (const firstCharBounds of firstCharBoundsList) {
     boundsList.push(
@@ -214,7 +226,8 @@ export function getCharTokens(img: Jimp) {
         img,
         avgChar,
         firstCharBounds,
-        boundsList[boundsList.length-1] ?? []
+        boundsList[boundsList.length-1] ?? [],
+        tilt
       )
     )
   }

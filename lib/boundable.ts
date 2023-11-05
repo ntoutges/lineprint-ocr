@@ -2,12 +2,15 @@ import Jimp = require("jimp");
 import { Bounds, floodFillAdd, floodFillArea, floodFillBounds } from "./floodable.js";
 import { getSetting } from "./settings.js";
 import { getPixelAt } from "./jimpable.js";
+import { Token } from "./tokenable.js";
 
 export function getLineCharBounds(
   img: Jimp,
   avgCharBounds: { w: number, h: number },
   firstCharBounds: Bounds,
-  lastCharBoundsList: Bounds[]
+  lastCharBoundsList: Bounds[],
+  tilt: number,
+  uniformYBoundsSet?: "uniform" | "individual" | "mean" | "median"
 ): Bounds[] {
   const boundsList: Bounds[] = [firstCharBounds];
   const yBuffer = getSetting<number>("charBounds.yBuffer.individual");
@@ -16,6 +19,7 @@ export function getLineCharBounds(
   const hLookaround = getSetting<number>("charBounds.lookaround.horizontal");
   const maxWidthExpansionRatio = getSetting<number>("charBounds.width-expansion.max-height-ratio");
   const splitBasedOnFirst = getSetting<"last" | "first">("charBounds.y-splitting-function") == "first";
+  const uniformYBounds = uniformYBoundsSet ?? getSetting<"uniform" | "individual" | "mean" | "median">("charBounds.y-bounds");
 
   let globalMinY = 0;
   for (const bounds of lastCharBoundsList) {
@@ -63,34 +67,36 @@ export function getLineCharBounds(
 
     // "Vertical Correction"; too short
     let heightFactor = charBounds.h / avgCharBounds.h;
-    if (heightFactor < 0.8) { // set y bounds to same as last (ensuring that encompasses original bounds)
-      charBounds.y = Math.min(charBounds.y, lastCharBounds.y);
-      charBounds.y2 = Math.max(charBounds.y2, lastCharBounds.y2);
-      charBounds.h = charBounds.y2 - charBounds.y;
+    if (uniformYBounds != "uniform") { // redundant otherwise
+      if (heightFactor < 0.8) { // set y bounds to same as last (ensuring that encompasses original bounds)
+        charBounds.y = Math.min(charBounds.y, lastCharBounds.y);
+        charBounds.y2 = Math.max(charBounds.y2, lastCharBounds.y2);
+        charBounds.h = charBounds.y2 - charBounds.y;
 
-      const charBounds2 = rebound(img, charBounds);
-      if (charBounds2.h / avgCharBounds.h < 0.7) { // too small
-        charBounds = combineBounds(charBounds, charBounds2);
-      }
-      else charBounds = charBounds2;
-    }
-    
-    // remove any overlap
-    const overlapV = getOverlappingBound(charBounds, lastCharBoundsList);
-    if (overlapV) {
-      charBounds.y = overlapV.y2 + 1;
-      charBounds.h = charBounds.y2 - charBounds.y;
-      // charBounds = rebound(img, charBounds); // adjust bounds based on new info
-      const charBounds2 = rebound(img, charBounds);
-      if (charBounds2.h == 0) {
-        charBounds.x2 = overlapV.x2; // push forwards
-        continue;
+        const charBounds2 = rebound(img, charBounds);
+        if (charBounds2.h / avgCharBounds.h < 0.7) { // too small
+          charBounds = combineBounds(charBounds, charBounds2);
+        }
+        else charBounds = charBounds2;
       }
       
-      if (charBounds2.h / avgCharBounds.h < 0.7) { // too small
-        charBounds = combineBounds(charBounds, charBounds2);
+      // remove any overlap
+      const overlapV = getOverlappingBound(charBounds, lastCharBoundsList);
+      if (overlapV) {
+        charBounds.y = overlapV.y2 + 1;
+        charBounds.h = charBounds.y2 - charBounds.y;
+        // charBounds = rebound(img, charBounds); // adjust bounds based on new info
+        const charBounds2 = rebound(img, charBounds);
+        if (charBounds2.h == 0) {
+          charBounds.x2 = overlapV.x2; // push forwards
+          continue;
+        }
+        
+        if (charBounds2.h / avgCharBounds.h < 0.7) { // too small
+          charBounds = combineBounds(charBounds, charBounds2);
+        }
+        else charBounds = charBounds2;
       }
-      else charBounds = charBounds2;
     }
 
     // split horizontally first
@@ -108,7 +114,7 @@ export function getLineCharBounds(
 
     // split vertically after
     heightFactor = charBounds.h / avgCharBounds.h;
-    if (heightFactor > 1.3) {
+    if (heightFactor > 1.3 && uniformYBounds != "uniform") {
       // const boundCandidates = splitBoundVertically(img, charBounds, heightFactor, vLookaroundU,vLookaroundD);
       
       // // use bound candidate closest to where character was expected
@@ -122,17 +128,75 @@ export function getLineCharBounds(
       );
     }
 
-    // same starting bounds, but with (presumably) greater width; replace the old one
+    // within previous bounds, but with (presumably) greater width; replace the old one
     // no, I have no clue how this would happen, but it does on 010.png...
-    if (charBounds.x == lastCharBounds.x) {
+    if (charBounds.x <= lastCharBounds.x + lastCharBounds.w * 0.5) {
       boundsList.pop(); // remove last char      
+    }
+
+    // all must conform to this
+    if (uniformYBounds == "uniform") {
+      const influence = getTiltInfluence(tilt, charBounds.x - firstCharBounds.x);
+      charBounds.y = firstCharBounds.y + influence;
+      charBounds.h = firstCharBounds.h; // cannot influence height
+      charBounds.y2 = firstCharBounds.y2 + influence;
     }
 
     boundsList.push(charBounds);
     lastCharBounds = charBounds;
   }
 
+  if (uniformYBounds == "mean" || uniformYBounds == "median") { // take average of all y-values, set y-values of first character, then run this function again in "uniform" mode
+    let yAvg: number;
+    let heightAvg: number;
+    if (uniformYBounds == "mean") {
+      yAvg = Math.round(average(boundsList.map(bounds => bounds.y - getTiltInfluence(tilt,bounds.x - firstCharBounds.x) )));
+      heightAvg = Math.round(average(boundsList.map(bounds => bounds.h )));
+    }
+    else { // get median
+      yAvg = Math.round(median(boundsList.map(bounds => bounds.y - getTiltInfluence(tilt,bounds.x - firstCharBounds.x) )));
+      heightAvg = Math.round(median(boundsList.map(bounds => bounds.h )));
+    }
+
+    firstCharBounds.y = yAvg;
+    firstCharBounds.h = heightAvg;
+    firstCharBounds.y2 = yAvg + heightAvg;
+
+    // average established, run through again to catch any missed characters (the impact of these should be minimal on the average)
+    return getLineCharBounds(
+      img,
+      avgCharBounds,
+      firstCharBounds,
+      lastCharBoundsList,
+      tilt,
+      "uniform"
+    );
+  }
+
   return boundsList;
+}
+
+function getTiltInfluence(
+  tilt: number,
+  x: number
+) {
+  return Math.round(tilt * x);
+}
+
+function average(vals: number[]) {
+  return sum(vals) / vals.length;
+}
+
+function sum(vals: number[], map: (val: number) => number = (val) => val) {
+  let total = 0;
+  for (const val of vals) { total += map(val); }
+  return total;
+}
+
+function median(val: number[]) {
+  val.sort();
+  if (val.length % 2 == 0) return (val[val.length/2] + val[(val.length/2-1)])/2;
+  return val[(val.length-1)/2];
 }
 
 // take in bounds, then change the bounds so they encompass all black pixels connected to those in the original bounds
@@ -499,4 +563,26 @@ export function getAverageCharBounds(boundsList: Bounds[]) {
 function getMiddle(list: number[]) {
   if (list.length % 2 == 0) return (list[list.length/2] + list[list.length/2-1]) / 2
   else return list[(list.length-1)/2]
+}
+
+// trusting this info: https://www.mathsisfun.com/data/least-squares-regression.html
+export function getTilt(boundsList: Bounds[]) {
+  const points: [x: number, y: number][] = [];
+  for (const bounds of boundsList) {
+    points.push([
+      Math.round(bounds.x + bounds.w/2),
+      Math.round(bounds.y + bounds.h/2)
+    ]);
+  }
+
+  const sumX = sum(points.map(point => point[0]));
+  const sumY = sum(points.map(point => point[1]));
+  const sumXSq = sum(points.map(point => point[0]**2));
+  const sumXY = sum(points.map(point => point[0] * point[1]));
+  const n = points.length;
+
+  const slope = (n * sumXY - sumX*sumY) / (n * sumXSq - sumX ** 2);
+  // const intercept = average(points.map(point => point[1])) - slope * average(points.map(point => point[0])); // intercept not important
+
+  return slope;
 }
