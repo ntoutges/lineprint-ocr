@@ -3,28 +3,54 @@ import { TokenText } from "./postprocessable.js";
 
 // functions mutate original input
 export const steps: Record<string, (input: TokenText, settings: Record<string,any>) => void> = {
-  ";/: Correction": correctSemiAndFullColon,
+  "; Correction": correctSemicolon,
+  ": Correction": correctColon,
+  "- Correction": correctDash,
   "B/8 Correction": correctBandEight,
   "B/8 Replacement": replaceBandEight
 };
 
 // user defined functinos for application-specific tasks
 
-function correctSemiAndFullColon(input: TokenText, settings: Record<string,any>) {
-  const minRatio = settings["min-ratio"] as number;
+function correctSemicolon(input: TokenText, settings: Record<string,any>) {
   for (let y = 0; y < input.length; y++) {
     const line = input.getText(y);
     for (let x = 1; x < line.length; x++) {
 
-      // consider converting ":" -> ";"
-      if (line[x] == ":" && line[x-1] == " ") { // previous character is empty, and current character is a colon
+      // consider converting ":"/")" -> ";"
+      const isReplaceable = line[x] == ":" || line[x] == ")";
+      if (isReplaceable && line[x-1] == " ") { // previous character is empty, and current character is a colon
         const distance = input.getToken(y, x).distances[";"];
-        if (distance < minRatio) input.setChar(y, x, ";");
+        input.setChar(y, x, ";");
       }
+    }
+  }
+}
+
+function correctColon(input: TokenText, settings: Record<string,any>) {
+  const minRatio = settings["min-ratio"] as number;
+  for (let y = 0; y < input.length; y++) {
+    const line = input.getText(y);
+    for (let x = 1; x < line.length; x++) {
+      
       // consider converting ";" -> ":"
-      else if (line[x] == ";" && line[x-1] != " ") { // previous character is not empty, and current character is a semicolon
+      if (line[x] == ";" && line[x-1] != " ") { // previous character is not empty, and current character is a semicolon
         const distance = input.getToken(y, x).distances[":"];
         if (distance < minRatio) input.setChar(y, x, ":");
+      }
+    }
+  }
+}
+
+function correctDash(input: TokenText, settings: Record<string,any>) {
+  const minRatio = settings["min-ratio"] as number;
+  for (let y = 0; y < input.length; y++) {
+    const line = input.getText(y);
+    for (let x = 1; x < line.length; x++) {
+      
+      // consider converting "^" -> "-"
+      if (line[x] == "^" && line[x-1] == ";") { // previous character is a semicolon, and current character is a caret
+        input.setChar(y, x, "-");
       }
     }
   }

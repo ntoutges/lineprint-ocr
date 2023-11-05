@@ -3,6 +3,5 @@ node_modules/
 io/input/*
 io/output/*
 io/training/*
-io/training-data/*
 src/*
 src../

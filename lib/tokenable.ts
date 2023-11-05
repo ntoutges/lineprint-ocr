@@ -183,7 +183,7 @@ export function fillKnownTokens(
       tokens[i][j].value = knownChar;
       index++;
     }
-    if (index < textLines[line].length-1) {
+    if (index < textLines[line].length) {
       console.log(`WARNING: known text on line [${line+1}] (${textLines[line]}) has more chars than tokens implies.`);
       line++;
       continue;
@@ -191,7 +191,7 @@ export function fillKnownTokens(
     line++;
   }
 
-  if (line+1 < textLines.length) {
+  if (line < textLines.length) {
     console.log(`WARNING: known text has more lines than tokens implies. ${line+1} vs ${textLines.length}`);
   }
 

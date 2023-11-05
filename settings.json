@@ -30,6 +30,7 @@
       "x": 59,
       "y": 67
     },
+    "y-splitting-function": "first", // "last" | "first" | "avg"
     "xDiff": 10, // amount a pixel must be further left to be considered new
     "yBuffer": { // amount of pixels around the center line to check
       "total-offset": 20,
@@ -40,10 +41,13 @@
       "vertical-up": 5,
       "vertical-down": 20,
       "horizontal": 5
+    },
+    "width-expansion": {
+      "max-height-ratio": 1.2 // height cannot expand by more than this much
     }
   },
   "charHighlight": {
-    "doOutputBounds": false
+    "doOutputBounds": true
   },
   "recognition": {
     // amount that the progam will try to move the image to the center
@@ -53,14 +57,18 @@
   },
   "postprocessing": {
     "enabled": {
-      ";/: Correction": true,
+      "; Correction": true,
+      ": Correction": true,
+      "- Correction": true,
       "B/8 Correction": false,
       "B/8 Replacement": false
     },
     "settings": {
-      ";/: Correction": {
-        "min-ratio": 1.5 // ":/;" must be less than [] units from a ";/:" for change to occur
+      "; Correction": {},
+      ": Correction": {
+        "min-ratio": 1.5
       },
+      "- Correction": {},
       "B/8 Correction": {
         "min-ratio": 1.5, // "B/8" must be less than [] units from a "8/B" for change to occur
         "flatness-smoothing": 15,

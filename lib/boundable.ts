@@ -1,5 +1,5 @@
 import Jimp = require("jimp");
-import { Bounds, floodFillAdd, floodFillBounds } from "./floodable.js";
+import { Bounds, floodFillAdd, floodFillArea, floodFillBounds } from "./floodable.js";
 import { getSetting } from "./settings.js";
 import { getPixelAt } from "./jimpable.js";
 
@@ -14,6 +14,13 @@ export function getLineCharBounds(
   const vLookaroundU = getSetting<number>("charBounds.lookaround.vertical-up");
   const vLookaroundD = getSetting<number>("charBounds.lookaround.vertical-down");
   const hLookaround = getSetting<number>("charBounds.lookaround.horizontal");
+  const maxWidthExpansionRatio = getSetting<number>("charBounds.width-expansion.max-height-ratio");
+  const splitBasedOnFirst = getSetting<"last" | "first">("charBounds.y-splitting-function") == "first";
+
+  let globalMinY = 0;
+  for (const bounds of lastCharBoundsList) {
+    globalMinY = Math.max(bounds.y2+1, globalMinY);
+  }
 
   const maxX = img.bitmap.width;
 
@@ -22,7 +29,7 @@ export function getLineCharBounds(
     const minX = lastCharBounds.x2 + 1;
     
     const midpoint = lastCharBounds.y + Math.floor(lastCharBounds.h/2)
-    const minY = midpoint - yBuffer;
+    const minY = Math.max(globalMinY, midpoint - yBuffer);
     const maxY = midpoint + yBuffer;
 
     let charBounds = getTopLeftCharBounds(
@@ -34,15 +41,24 @@ export function getLineCharBounds(
 
     // "Horizontal Correction"; too skinny
     let widthFactor = charBounds.w / avgCharBounds.w;
-    if (widthFactor < 0.7) {
+    if (widthFactor < 0.6) {
+      const oldW = charBounds.w;
+      
       charBounds.w = avgCharBounds.w;
       charBounds.x2 = charBounds.x + charBounds.w;
-      
+
       const charBounds2 = rebound(img, charBounds);
-      if (charBounds2.w / avgCharBounds.w < 0.7) { // too small
-        charBounds = combineBounds(charBounds, charBounds2);
+      const ratio = charBounds2.h / charBounds.h;
+      if (ratio <= maxWidthExpansionRatio) { // only save changed bounds if within ratio
+        if (charBounds2.w / avgCharBounds.w < 0.7) { // too small
+          charBounds = combineBounds(charBounds, charBounds2);
+        }
+        else charBounds = charBounds2;
       }
-      else charBounds = charBounds2;
+      else { // undo expansion
+        charBounds.w = oldW;
+        charBounds.x2 = charBounds.x + oldW;
+      }
     }
 
     // "Vertical Correction"; too short
@@ -102,8 +118,14 @@ export function getLineCharBounds(
       // );
       charBounds = splitBoundVerticallyByReference(
         charBounds,
-        lastCharBounds
+        splitBasedOnFirst ? firstCharBounds : lastCharBounds
       );
+    }
+
+    // same starting bounds, but with (presumably) greater width; replace the old one
+    // no, I have no clue how this would happen, but it does on 010.png...
+    if (charBounds.x == lastCharBounds.x) {
+      boundsList.pop(); // remove last char      
     }
 
     boundsList.push(charBounds);

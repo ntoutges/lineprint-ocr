@@ -93,6 +93,21 @@ export function floodFillAdd(
   }
 }
 
+// not actually flood fill...
+export function floodFillArea( // count amount of black pixels
+  img: Jimp,
+  x: number,
+  y: number,
+  x2: number,
+  y2: number
+) {
+  let area = 0;
+  img.scan(x,y, x2-x, y2-y, (x,y,idx) => {
+    if (img.bitmap.data[idx] != 0xff) area++;
+  });
+  return area;
+}
+
 export function floodFillBeyond(
   img: Jimp,
   x: number,
