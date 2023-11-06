@@ -22,6 +22,9 @@ export function main(args: string[], namedArgs: Record<string,string>) {
     doPostPostProcess(args);
     return;
   }
+
+  let inFolder = getSetting<string>("general.infolder").replace(/\/$/g, ""); // remove possible trailing "/"
+  if (inFolder.trim().length == 0) inFolder = __dirname + "/../io/input";
   
   const start = (new Date()).getTime();
   const promises: Promise<string>[] = [];
@@ -31,7 +34,7 @@ export function main(args: string[], namedArgs: Record<string,string>) {
     promises.push(
       new Promise<string>((resolve,reject) => {
         doConversion(
-          toAbsoluteInput(filename),
+          toAbsoluteInput(filename, inFolder),
           toAbsoluteOutput(filename),
           filename,
           index++,
@@ -115,7 +118,7 @@ function doConversion(
         
         if ("train" in namedArgs) {
           try {
-            const txtFile = __dirname + "/../io/input/" + extensionless(name) + ".txt";
+            const txtFile = setExt(input, "txt");
             fillKnownTokens(tokens, fs.readFileSync(txtFile).toString());
             const categorized = categorizeTokens(tokens);
 

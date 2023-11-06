@@ -37,8 +37,8 @@ export function appendToName(filename: string, append: string) {
   return filename.substring(0,i) + append + filename.substring(i); // squish append between name of file and extension
 }
 
-export function toAbsoluteInput(filename: string) {
-  return __dirname + "/../io/input/" + filename;
+export function toAbsoluteInput(filename: string, inFolder:string = __dirname + "/../io/input") {
+  return inFolder + "/" + filename;
 }
 
 export function toAbsoluteOutput(filename: string) {

@@ -1,4 +1,7 @@
 {
+  "general": {
+    "infolder": "C:/Users/Nicholas/FTP/FOCAL" // empty to use defualt (input/); specify with absolute path
+  },
   "simplify": {
     "weights": {
       "r": 0.33,
