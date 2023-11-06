@@ -1,8 +1,8 @@
 const fs = require("fs");
 
-export function getAllFiles(validTypes: string[]): string[] {
+export function getAllFiles(validTypes: string[], inFolder: string): string[] {
   const validSet = new Set<string>(validTypes);
-  const filenames = fs.readdirSync(__dirname + "/../io/input");
+  const filenames = fs.readdirSync(inFolder);
   
   const validFileNames: string[] = [];
   for (const filename of filenames) {

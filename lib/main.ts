@@ -13,8 +13,11 @@ import { addToCombo, finalizeCombo } from "./combinator.js";
 import { getTilt } from "./boundable.js";
 
 export function main(args: string[], namedArgs: Record<string,string>) {
+  let inFolder = getSetting<string>("general.infolder").replace(/\/$/g, ""); // remove possible trailing "/"
+  if (inFolder.trim().length == 0) inFolder = __dirname + "/../io/input";
+  
   if (args.length == 0) { // read all
-    args = getAllFiles(["png"]);
+    args = getAllFiles(["png"], inFolder);
   }
 
   if ("text" in namedArgs) {
@@ -22,9 +25,6 @@ export function main(args: string[], namedArgs: Record<string,string>) {
     doPostPostProcess(args);
     return;
   }
-
-  let inFolder = getSetting<string>("general.infolder").replace(/\/$/g, ""); // remove possible trailing "/"
-  if (inFolder.trim().length == 0) inFolder = __dirname + "/../io/input";
   
   const start = (new Date()).getTime();
   const promises: Promise<string>[] = [];

@@ -1,6 +1,6 @@
 {
   "general": {
-    "infolder": "C:/Users/Nicholas/FTP/FOCAL" // empty to use defualt (input/); specify with absolute path
+    "infolder": "C:/Users/Nicholas/FTP/FOCAL/Categorized" // empty to use defualt (input/); specify with absolute path
   },
   "simplify": {
     "weights": {
@@ -13,7 +13,7 @@
   },
   "denoise": { // assumes that img has already been simplified
     "limit": 300, // minimum size a blob must be to cound as real
-    "autofill-borders": 200 // px to treat as the border
+    "autofill-borders": 150 // px to treat as the border
   },
   "horizontalPrune": {
     "thick": 30,   // min width of a thick region
@@ -33,6 +33,10 @@
       "x": 59,
       "y": 67
     },
+    "minCharSizeRatio": { // only acts on first character--so small, they are pruned out
+      "x": 0.1,
+      "y": 0.1
+    },
     "y-splitting-function": "first", // "last" | "first"
     "y-bounds": "uniform", // "uniform" | "individual" | "mean" | "median"
     "xDiff": 10, // amount a pixel must be further left to be considered new
@@ -51,7 +55,7 @@
     }
   },
   "charHighlight": {
-    "doOutputBounds": true,
+    "doOutputBounds": false,
     "doHighlightSpace": false
   },
   "recognition": {
@@ -106,12 +110,12 @@
   "post-postprocessing": { // uses only text data from a file, and relying on patterns // run individually with -text 1
     "enabled": {
       "$ recognition": true,
+      "Semicolon Remnant Removal": true,
       "format": true
     },
     "settings": {
-      "$ recognition": {},
       "format": {
-        "sections": [ 0, 4, 13, 22, 30, 37, 53 ],
+        "sections": [ 0, 4, 13, 22, 30, 37, 45, 53 ],
         "wriggle-room": 2
       }
     }

@@ -315,6 +315,9 @@ export function getLineFirstCharBounds(
   const yBuffer = getSetting<number>("charBounds.yBuffer.total");
   const yBufferOffset = getSetting<number>("charBounds.yBuffer.total-offset");
   
+  const minWidth = getSetting<number>("charBounds.minCharSizeRatio.x") * avgCharBounds.w;
+  const minHeight = getSetting<number>("charBounds.minCharSizeRatio.y") * avgCharBounds.h;
+
   const boundsList: Bounds[] = [];
   
   let minY = yBuffer;
@@ -335,10 +338,10 @@ export function getLineFirstCharBounds(
 
     const subBounds = splitBoundVertically(img, bounds, heightFactor, lookaroundU, lookaroundD);
     for (const bound of subBounds) {
+      if (bound.w <= minWidth || bound.h <= minHeight) continue; // invalid bounds
       boundsList.push(bound);
     }
   }
-  
   return boundsList;
 }
 
