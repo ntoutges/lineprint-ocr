@@ -17,7 +17,7 @@
   },
   "horizontalPrune": {
     "thick": 30,   // min width of a thick region
-    "thin": 10,    // max width of a thin region
+    "thin": 5,    // max width of a thin region
     "distance": 10, // distance between "thick" and "thin" region
     "size-check-limit": 1000, // check if resulting region is still large enough to be considered a region, if not, remove from candidates
     "doDenoise": false, // run denoise to get rid of junk
@@ -31,7 +31,8 @@
     "max-x-portion": 0.5, // maximum distances from the left to be considered a character
     "charSize": { // leave components at '0' to calculate automatically
       "x": 59,
-      "y": 67
+      "y": 76,
+      "y-spacing": 0.13 // ratio of whitespace between the bottom of one char, and the top of the next
     },
     "minCharSizeRatio": { // only acts on first character--so small, they are pruned out
       "x": 0.1,
@@ -39,6 +40,7 @@
     },
     "y-splitting-function": "first", // "last" | "first"
     "y-bounds": "uniform", // "uniform" | "individual" | "mean" | "median"
+    "char-height": "individual", // "fixed" | "individual"
     "xDiff": 10, // amount a pixel must be further left to be considered new
     "yBuffer": { // amount of pixels around the center line to check
       "total-offset": 20,
@@ -46,8 +48,8 @@
       "individual": 20 // gap from one char to the next
     },
     "lookaround": { // amount of lines to look around for smallest gap when splitting conjoined chars
-      "vertical-up": 5,
-      "vertical-down": 20,
+      "vertical-up": 2,
+      "vertical-down": 5,
       "horizontal": 5
     },
     "width-expansion": {
@@ -97,7 +99,7 @@
     "do-combination": true,
     "outfile": "out.txt",
     "file-seperator": "", // separates the end of one file from the start of the next
-    "disregard-header": true, // ignore first line of each page
+    "disregard-header": false, // ignore first line of each page
     "autocorrect": {
       ".8YTE": ".BYTE",
       ".0EF": ".DEF",
@@ -111,12 +113,22 @@
     "enabled": {
       "$ recognition": true,
       "Semicolon Remnant Removal": true,
-      "format": true
+      "trim trailing spaces": true,
+      "trim empty lines": true,
+      "prune noise": true,
+      "format": true,
+      "prompt garbage": true
     },
     "settings": {
       "format": {
         "sections": [ 0, 4, 13, 22, 30, 37, 45, 53 ],
         "wriggle-room": 2
+      },
+      "prompt garbage": {
+        "portion": 0.5 // more than this, and line is flagged as garbage
+      },
+      "prune noise": {
+        "noise": ".,'"
       }
     }
   }

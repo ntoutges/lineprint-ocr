@@ -127,6 +127,10 @@ export async function recognizeFromTrainingDataset(tokens: Token[][]) {
     for (const token of line) {
       if (token.value == " ") continue; // ignore spaces
 
+      // start out assuming space
+      // let minDistance = getEmptyImageDifference(token.img);
+      // let minChar = " ";
+      // token.distances[" "] = minDistance
       let minDistance = Infinity;
       let minChar = null;
       let formatedTestImg: Jimp = null;
@@ -205,6 +209,16 @@ function getImageDifference(
   let totalDist = 0;
   img1.scan(0,0, img1.bitmap.width, img1.bitmap.height, (x,y,idx) => {
     totalDist += Math.abs(img1.bitmap.data[idx] - img2.bitmap.data[idx]);
+  });
+  return totalDist;
+}
+
+function getEmptyImageDifference(
+  img: Jimp
+) {
+  let totalDist = 0;
+  img.scan(0,0, img.bitmap.width, img.bitmap.height, (x,y,idx) => {
+    totalDist += 0xFF - img.bitmap.data[idx];
   });
   return totalDist;
 }

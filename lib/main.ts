@@ -12,12 +12,31 @@ import { TokenText, doPostProcess, doPostProcess2 } from "./postprocessable.js";
 import { addToCombo, finalizeCombo } from "./combinator.js";
 import { getTilt } from "./boundable.js";
 
-export function main(args: string[], namedArgs: Record<string,string>) {
+const batchPattern = /(\d+)\s*\/\s*(\d+)/
+export async function main(args: string[], namedArgs: Record<string,string>) {
   let inFolder = getSetting<string>("general.infolder").replace(/\/$/g, ""); // remove possible trailing "/"
   if (inFolder.trim().length == 0) inFolder = __dirname + "/../io/input";
   
   if (args.length == 0) { // read all
     args = getAllFiles(["png"], inFolder);
+
+    if ("batch" in namedArgs) {
+      const batchData = namedArgs.batch.match(batchPattern);
+      if (!batchData) {
+        console.log(`Could not interpret \"${namedArgs.batch}\" as batch data. Use format <batch #>/<total batches>`);
+        return;
+      }
+      const batchNum = +batchData[1];
+      const batchTotal = +batchData[2];
+
+      const startI = Math.floor(args.length * (batchNum-1) / batchTotal);
+      const endI = Math.floor(args.length * batchNum / batchTotal);
+      const amount = endI-startI-1;
+      const portion = Math.round(1000 * amount / args.length) / 10;
+
+      console.log(`Batch #${batchNum} processing ${amount}/${args.length} images, (\x1b[36m${portion}%\x1b[0m) images`);
+      args = args.slice(startI, endI);
+    }
   }
 
   if ("text" in namedArgs) {
@@ -27,49 +46,39 @@ export function main(args: string[], namedArgs: Record<string,string>) {
   }
   
   const start = (new Date()).getTime();
-  const promises: Promise<string>[] = [];
   let index = 0;
   for (const filename of args) {
     console.log(`: Processing [${filename}]`);
-    promises.push(
-      new Promise<string>((resolve,reject) => {
-        doConversion(
-          toAbsoluteInput(filename, inFolder),
-          toAbsoluteOutput(filename),
-          filename,
-          index++,
-          namedArgs
-        ).then((result) => {
-          console.log(`: Completed [${filename}] with output of \"${result}\"`);
-
-          resolve(result);
-        }).catch(err => { reject(err); })
-      })
+    const result = await doConversion(
+      toAbsoluteInput(filename, inFolder),
+      toAbsoluteOutput(filename),
+      filename,
+      index++,
+      namedArgs
     );
+    console.log(`: Completed [${filename}] with output of \"${result}\"`);
   }
 
-  Promise.all(promises).then(async result => {
-    const end = (new Date()).getTime();
-    const delta = Math.round((end - start) / 10) / 100
+  const end = (new Date()).getTime();
+  const delta = Math.round((end - start) / 10) / 100
 
-    console.log(`::Processed ${args.length} ${args.length == 1 ? "file" : "files"} in ${delta}s`);
+  console.log(`::Processed ${args.length} ${args.length == 1 ? "file" : "files"} in ${delta}s`);
 
-    const doCombo = getSetting<boolean>("combination.do-combination");
+  const doCombo = getSetting<boolean>("combination.do-combination");
 
-    if ("train" in namedArgs) {
-      console.log(": Constructing training dataset");
-      const output = await constructTrainingDataset();
-      console.log(`::Constructed training dataset with output of \"${output}\"`);
-    }
-    else  if (doCombo) {
-      console.log(": Writing combination file");
-      finalizeCombo().then((result) => {
-        console.log("Finished!");
-        const outfile = getSetting<string>("combination.outfile");
-        doPostPostProcess([outfile]);
-      });
-    }
-  }).catch(err => { console.error(err); })
+  if ("train" in namedArgs) {
+    console.log(": Constructing training dataset");
+    const output = await constructTrainingDataset();
+    console.log(`::Constructed training dataset with output of \"${output}\"`);
+  }
+  else  if (doCombo) {
+    console.log(": Writing combination file");
+    finalizeCombo().then((result) => {
+      console.log("Finished!");
+      const outfile = getSetting<string>("combination.outfile");
+      doPostPostProcess([outfile]);
+    });
+  }
 }
 
 function doConversion(

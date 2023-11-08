@@ -204,8 +204,11 @@ export function getCharTokens(img: Jimp) {
     h: Math.round(bounds.y)
   };
   if (bounds.x == 0 && bounds.y == 0) {
+    const ySpaceRatio = getSetting<number>("charSize.y-spacing");
+
     const firstBounds = getLineCharBoundsBlind(img, 0,img.bitmap.height);
     avgChar = getAverageCharBounds(firstBounds);
+    avgChar.h = Math.round(avgChar.h * ySpaceRatio)
     console.log("Character Bounds: ", avgChar)
   }
 
@@ -213,23 +216,25 @@ export function getCharTokens(img: Jimp) {
   const firstBounds = getLineCharBounds( // get line to find tilt from
     img,avgChar,
     firstCharBoundsList[0],[],0,
+    null,
     "individual"
-  );
+  ).bounds;
 
   const tilt = getTilt(firstBounds);
   // console.log(`Found tilt of slope: ${tilt.toFixed(6)}`);
   
+  let lastLine = null;
   const boundsList: Bounds[][] = [];
   for (const firstCharBounds of firstCharBoundsList) {
-    boundsList.push(
-      getLineCharBounds(
-        img,
-        avgChar,
-        firstCharBounds,
-        boundsList[boundsList.length-1] ?? [],
-        tilt
-      )
+    const { bounds, line } = getLineCharBounds(
+      img,
+      avgChar,
+      firstCharBounds,
+      boundsList[boundsList.length-1] ?? [],
+      tilt, lastLine
     )
+    lastLine = line;
+    boundsList.push(bounds)
   }
 
   const origin = getTextOrigion(boundsList);

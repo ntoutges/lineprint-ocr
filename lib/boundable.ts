@@ -10,8 +10,9 @@ export function getLineCharBounds(
   firstCharBounds: Bounds,
   lastCharBoundsList: Bounds[],
   tilt: number,
-  uniformYBoundsSet?: "uniform" | "individual" | "mean" | "median"
-): Bounds[] {
+  lastLine: Line,
+  uniformYBoundsSet?: "uniform" | "individual" | "mean" | "median",
+): {bounds: Bounds[], line: Line} {
   const boundsList: Bounds[] = [firstCharBounds];
   const yBuffer = getSetting<number>("charBounds.yBuffer.individual");
   const vLookaroundU = getSetting<number>("charBounds.lookaround.vertical-up");
@@ -21,10 +22,10 @@ export function getLineCharBounds(
   const splitBasedOnFirst = getSetting<"last" | "first">("charBounds.y-splitting-function") == "first";
   const uniformYBounds = uniformYBoundsSet ?? getSetting<"uniform" | "individual" | "mean" | "median">("charBounds.y-bounds");
 
-  let globalMinY = 0;
-  for (const bounds of lastCharBoundsList) {
-    globalMinY = Math.max(bounds.y2+1, globalMinY);
-  }
+  // let globalMinY = 0;
+  // for (const bounds of lastCharBoundsList) {
+  //   globalMinY = Math.max(bounds.y2+1, globalMinY);
+  // }
 
   const maxX = img.bitmap.width;
 
@@ -33,7 +34,12 @@ export function getLineCharBounds(
     const minX = lastCharBounds.x2 + 1;
     
     const midpoint = lastCharBounds.y + Math.floor(lastCharBounds.h/2)
-    const minY = Math.max(globalMinY, midpoint - yBuffer);
+    
+    let minY = midpoint - yBuffer;
+    if (lastLine) {
+      minY = Math.max(minY, Math.ceil(lastLine.getAt(lastCharBounds.x2)+1));
+    }
+
     const maxY = midpoint + yBuffer;
 
     let charBounds = getTopLeftCharBounds(
@@ -169,11 +175,31 @@ export function getLineCharBounds(
       firstCharBounds,
       lastCharBoundsList,
       tilt,
+      lastLine,
       "uniform"
     );
   }
+  
+  let maxBoundsX = 0;
+  let maxBoundsY = 0;
+  for (const bounds of boundsList) {
+    const yAdj = bounds.y2 - getTiltInfluence(tilt, bounds.x);
+    if (yAdj > maxBoundsY) {
+      maxBoundsY = yAdj;
+      maxBoundsX = bounds.x;
+    }
+  }
 
-  return boundsList;
+  const line = new Line(
+    maxBoundsX,
+    maxBoundsY,
+    tilt
+  );
+
+  return {
+    bounds: boundsList,
+    line
+  }
 }
 
 function getTiltInfluence(
@@ -318,6 +344,8 @@ export function getLineFirstCharBounds(
   const minWidth = getSetting<number>("charBounds.minCharSizeRatio.x") * avgCharBounds.w;
   const minHeight = getSetting<number>("charBounds.minCharSizeRatio.y") * avgCharBounds.h;
 
+  const fixedHeight = getSetting<string>("charBounds.char-height") == "fixed"; 
+
   const boundsList: Bounds[] = [];
   
   let minY = yBuffer;
@@ -330,16 +358,21 @@ export function getLineFirstCharBounds(
 
     const midpoint = line + Math.floor(avgCharBounds.h / 2);
     const bounds = getTopLeftCharBounds(img, 0,maxX, midpoint - yBuffer, midpoint + yBuffer);
-    if (!bounds) break;
+    if (!bounds) {
+      minY += avgCharBounds.h; // try moving down a line
+      continue;
+    }
     minY = bounds.y2 + yBufferOffset;
     
     const heightFactor = Math.max(Math.round(bounds.h / avgCharBounds.h), 1);
     // const widthFactor = Math.max(Math.round(bounds.w / avgCharBounds.w), 1);
 
-    const subBounds = splitBoundVertically(img, bounds, heightFactor, lookaroundU, lookaroundD);
+    const subBounds = fixedHeight ? blindSplitBoundVertically(img, bounds, avgCharBounds) : splitBoundVertically(img, bounds, heightFactor, lookaroundU, lookaroundD);;
     for (const bound of subBounds) {
       if (bound.w <= minWidth || bound.h <= minHeight) continue; // invalid bounds
       boundsList.push(bound);
+
+      minY + Math.max(minY, bound.y2 + yBufferOffset);
     }
   }
   return boundsList;
@@ -396,6 +429,26 @@ function splitBoundVertically(
     h: bounds.y2 - offset
   });
 
+  return boundsList;
+}
+
+function blindSplitBoundVertically(
+  img: Jimp,
+  bounds: Bounds,
+  avgCharBounds: { w: number, h: number }
+) {
+  const heightFactor = Math.ceil(bounds.h / avgCharBounds.h); // if slightly more than one character in height, assume two
+  const boundsList: Bounds[] = [];
+  for (let i = 0; i < heightFactor; i++) {
+    boundsList.push({
+      x: bounds.x,
+      x2: bounds.x2,
+      w: bounds.w,
+      h: avgCharBounds.h,
+      y: bounds.y + avgCharBounds.h * i,
+      y2: bounds.y + avgCharBounds.h * (i+1)
+    });
+  }
   return boundsList;
 }
 
@@ -588,4 +641,28 @@ export function getTilt(boundsList: Bounds[]) {
   // const intercept = average(points.map(point => point[1])) - slope * average(points.map(point => point[0])); // intercept not important
 
   return slope;
+}
+
+class Line {
+  private slope: number;
+  private intercept: number;
+  constructor(
+    x: number,
+    y: number,
+    slope: number
+  ) {
+    this.slope = slope;
+    this.intercept = y - slope * x;
+  }
+
+  // -1 if given point above line; 1 if below line
+  getRelativePos(
+    x: number,
+    y: number
+  ): 1 | -1 {
+    const lineY = this.getAt(x);
+    if (y > lineY) return 1; // below line
+    return -1; // above line
+  }
+  getAt(x: number) { return this.slope*x + this.intercept; }
 }
