@@ -15,6 +15,7 @@ import { getTilt } from "./boundable.js";
 const batchPattern = /(\d+)\s*\/\s*(\d+)/
 export async function main(args: string[], namedArgs: Record<string,string>) {
   let inFolder = getSetting<string>("general.infolder").replace(/\/$/g, ""); // remove possible trailing "/"
+  let outModifier = "";
   if (inFolder.trim().length == 0) inFolder = __dirname + "/../io/input";
   
   if (args.length == 0) { // read all
@@ -28,6 +29,8 @@ export async function main(args: string[], namedArgs: Record<string,string>) {
       }
       const batchNum = +batchData[1];
       const batchTotal = +batchData[2];
+
+      outModifier = batchData[1];
 
       const startI = Math.floor(args.length * (batchNum-1) / batchTotal);
       const endI = Math.floor(args.length * batchNum / batchTotal);
@@ -75,7 +78,7 @@ export async function main(args: string[], namedArgs: Record<string,string>) {
     console.log(": Writing combination file");
     finalizeCombo().then((result) => {
       console.log("Finished!");
-      const outfile = getSetting<string>("combination.outfile");
+      const outfile = appendToName(getSetting<string>("combination.outfile"), outModifier);
       doPostPostProcess([outfile]);
     });
   }
