@@ -8,10 +8,9 @@ export function addToCombo(index: number, text: string) {
   finalText[index] = text;
 }
 
-export function finalizeCombo() {
+export function finalizeCombo(outfile: string) {
   return new Promise<string>(resolve => {
     let seperator = "\n" + getSetting<string>("combination.file-seperator");
-    const outfilename = getSetting<string>("combination.outfile");
     const unknownsToPrompt = getSetting<string[]>("combination.prompt-unknown");
     const autocorrect = getSetting<Record<string,string>>("combination.autocorrect");
     const disregardHeader = getSetting<boolean>("combination.disregard-header");
@@ -79,7 +78,7 @@ export function finalizeCombo() {
     
     const text = finalTextArr.join(seperator);
 
-    fs.writeFile(__dirname + "/../io/output/" + outfilename, text, (err) => {
+    fs.writeFile(__dirname + "/../io/output/" + outfile, text, (err) => {
       if (err) console.error(err);
 
       resolve("Ok.");

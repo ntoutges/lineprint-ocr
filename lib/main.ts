@@ -76,9 +76,9 @@ export async function main(args: string[], namedArgs: Record<string,string>) {
   }
   else  if (doCombo) {
     console.log(": Writing combination file");
-    finalizeCombo().then((result) => {
+    const outfile = appendToName(getSetting<string>("combination.outfile"), outModifier);
+    finalizeCombo(outfile).then((result) => {
       console.log("Finished!");
-      const outfile = appendToName(getSetting<string>("combination.outfile"), outModifier);
       doPostPostProcess([outfile]);
     });
   }

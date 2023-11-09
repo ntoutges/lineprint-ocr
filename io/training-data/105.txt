@@ -1,0 +1,18 @@
+    PAL65    V002     14-MAR-81      11:45   PAGE 105
+4058                          .PAGE                  ;'MORE FLOATING POINT INPUT'
+4059
+4060
+4061                          ;HERE ON END OF NUMBER
+4062
+4063 55BA    20 9B52  FINP5:  JSR    SWAP            ;RESULT TO FAC1
+4064 55BD    A5 C1            LDA    DPFLG           ;ANY DP?
+4065 55BF    F0 0B            BEQ    FINP6           ;NO, ITS OK
+4066 55C1    A5 C3    FINP7:  LDA    K               ;ELSE ADJUST
+4067 55C3    F0 07            BEQ    FINP6           ;ADJUST DONE
+4068 55C5    20 4255          JSR    DIV10           ;RESULT/10.0
+4069 55C8    C6 C3            DEC    K               ;K TIMES
+4070 55CA    D0 F5            BNE    FINP7
+4071 55CC    A5 C0    FINP6:  LDA    SIGNP           ;NOW ADD SIGN
+4072 55CE    F0 03            BEQ    FINP8           ;WAS POS
+4073 55D0    20 2755          JSR    NEGATE          ;WAS NEGATIVE, SO NEGATE
+4074 55D3    60       FINP8:  RTS                    ;AND RETURN

@@ -49,9 +49,12 @@ export function getLineCharBounds(
     );
     if (!charBounds) break;
 
-    // "Horizontal Correction"; too skinny
     let widthFactor = charBounds.w / avgCharBounds.w;
-    if (widthFactor < 0.6) {
+    let heightFactor = charBounds.h / avgCharBounds.h;
+
+    // "Horizontal Correction"; too skinny
+    if (widthFactor < 0.6 && heightFactor < 0.7) { // likely a <"> character
+
       const oldW = charBounds.w;
       
       charBounds.w = avgCharBounds.w;
@@ -72,7 +75,6 @@ export function getLineCharBounds(
     }
 
     // "Vertical Correction"; too short
-    let heightFactor = charBounds.h / avgCharBounds.h;
     if (uniformYBounds != "uniform") { // redundant otherwise
       if (heightFactor < 0.8) { // set y bounds to same as last (ensuring that encompasses original bounds)
         charBounds.y = Math.min(charBounds.y, lastCharBounds.y);
@@ -357,7 +359,24 @@ export function getLineFirstCharBounds(
     if (line >= maxY) break; // no other black pixels available
 
     const midpoint = line + Math.floor(avgCharBounds.h / 2);
-    const bounds = getTopLeftCharBounds(img, 0,maxX, midpoint - yBuffer, midpoint + yBuffer);
+    let bounds: Bounds = null;
+    
+    // opportunities to throw out useless noise
+    let minX = 0;
+    for (let j = 0; j < 10; j++) {
+      bounds = getTopLeftCharBounds(img, minX,maxX, midpoint - yBuffer, midpoint + yBuffer);
+      
+      // can only break out if: no bounds; bounds too small
+      if (!bounds) break;
+      if (bounds.h >= minHeight) break;
+
+      minX = bounds.x2 + 1;
+      if (minX >= maxX) {
+        bounds = null;
+        break;
+      }
+    }
+
     if (!bounds) {
       minY += avgCharBounds.h; // try moving down a line
       continue;

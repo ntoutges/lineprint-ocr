@@ -1,0 +1,48 @@
+       PAL65   V002    14-MAR-81       11:45   PAGE 101
+
+
+3876                           .PAGE                    ;' MORE OF FLOATING POINT OUTPUT ROUTINE '
+3877
+3878  547A    20 C149 FPR4:   JSR     PLFAC2          ;GET NUMBER BACK INTO FAC2
+3879  547D    20 2253         JSR     FADD            ;ADD IN THE ROUNDING FACTOR
+3880  5480    24 B8           BIT     X1              ;IS NUMBER STILL < 1 ?
+3881  5482    70 13           BVS     FPR4A           ;BRANCH IF IT IS
+3882  5484    A5 B8           LDA     X1              ;MAYBE
+3883  5486    F0 0F           BEQ     FPP4A           ;BRANCH IF < 1
+3884  5488    68              PLA                     ;NO, THEN CRT ORICINAL EXPONENT
+3885  5489    F0 04           BEQ     FPP40           ;BRANCH IF ORIG NUMBER < 1
+3886  548B    24 AD           BIT     BITV1
+3887  548D    F0 02           BEQ     FPR41           ;8RANCH IF ORIG NUMBER > 1
+3888  548F    A5 B8   FPR40:  LDA     X1              ;WE GAINED A SIG FIG IN ROUNDING, GET NEW EXP
+3889  5491    48      FPR41:  PHA                     ;SAVE EXPONENT FOR LATER
+3890  5492    20 4255         JSR     DIV10           ;SCALE NUMBER BACK DOWN
+3891  5495    E6 C3           INC     K               ;AND INDICATE WE HAD TO
+3892  5497    38      FPR4A:  SEC
+3893  5498    A5 C5           LDA     M               ;NOW CALCULATE NUMBER OF LEADING BLANKS NEEDED
+3894  549A    E5 C3           SBC     K
+3895  549C    85 C4           STA     L               ;INTO L
+3896  549E    68              PLA                     ;GET EXPONENT OF ORIGINAL NUMBER BACK
+3897  549F    48              PHA                      ;SAVE AGAIN FOR LATER
+3898  54A0    F0 04           BEQ     FPR4B           ;BRANCH IF ORIGINAL NUMBER < 1 ?
+3899  54A2    24 AD           BIT     BITV1
+3900  54A4    F0 02           BEQ     FPR4C           ;BRANCH IF ORIG NUMBER > 1
+3901  54A6    C6 C4   FPR4B:  DEC     L               ;IT WAS < 1.  LEAVE ROOM FOR LEADING 0
+3902  54A8    24 C0   FPR4C:  BIT     SIGNP           ;WAS NUMBER NEGATIVE
+3903  54AA    10 02           BPL     FPR5            ;BRANCH IF NOT
+3904  54AC    C6 C4           DEC     L               ;YES, THEN LEAVE ROOM FOR MINUS SIGN
+3905  54AE    A5 C4   FPR5:   LDA     L               ;ANY BLANKS TO OUTPUT?
+3906  54B0    30 09           BMI     FPR7            ;BRANCH IF NOT
+3907  54B2    F0 07           BEQ     FPR7            ;BRANCH IF NOT
+3908  54B4    20 2C4A FPR6:   JSR     PSPACE          ;OUTPUT A BLANK
+3909  54B7    C6 C4           DEC     L               ;COUNT IT
+3910  54B9    D0 F9           BNE     FPR6            ;AND LOOP TILL ALL HAVE BEEN OUTPUT
+3911  54BB    24 C0   FPR7:   BIT     SIGNP           ;WAS NUMBER NEGATIVE?
+3912  54BD    10 05           BPL     FPR7A           ;BRANCH IF NOT
+3913  54BF    A9 2D           LDA#    '-              ;YES, OUTPUT LEADING MINUS
+3914  54C1    20 2E4A         JSR     PRINTC          ;AND FALL INTO NEXT PAGE
+3915  54C4    68      FPR7A:  PLA                     ;GET EXPONENT OF ORIGINAL NUMBER BACK AGAIN
+3916  54C5    F0 04           BEQ     FPR7B           ;BRANCH IF < 1.
+3917  54C7    24 AD           BIT     BITV1
+3918  54C9    F0 03           BEQ     FPR8            ;BRANCH IF > 1
+3919  54CB    20 F454 FPR7B:  JSR     PZERO           ;YES, THEN GIVE A LEADING ZERO (PEOPLE LIKE IT!)
+3920                                                  ;(IT'S ALSO A PAIN TO CHECK FOR!)

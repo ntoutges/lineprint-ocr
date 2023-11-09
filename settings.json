@@ -35,8 +35,8 @@
       "y-spacing": 0.13 // ratio of whitespace between the bottom of one char, and the top of the next
     },
     "minCharSizeRatio": { // only acts on first character--so small, they are pruned out
-      "x": 0.1,
-      "y": 0.1
+      "x": 0.5,
+      "y": 0.5
     },
     "y-splitting-function": "first", // "last" | "first"
     "y-bounds": "uniform", // "uniform" | "individual" | "mean" | "median"
@@ -96,8 +96,8 @@
     }
   },
   "combination": {
-    "do-combination": true,
     "outfile": "out.txt",
+    "do-combination": true,
     "file-seperator": "", // separates the end of one file from the start of the next
     "disregard-header": false, // ignore first line of each page
     "autocorrect": {
@@ -111,13 +111,13 @@
   // reads from output/, writes to postoutput/
   "post-postprocessing": { // uses only text data from a file, and relying on patterns // run individually with -text 1
     "enabled": {
-      "$ recognition": true,
+      "$ recognition": false,
       "Semicolon Remnant Removal": true,
       "trim trailing spaces": true,
       "trim empty lines": true,
       "prune noise": true,
       "format": true,
-      "prompt garbage": true
+      "prompt garbage": false
     },
     "settings": {
       "format": {
