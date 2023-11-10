@@ -1,5 +1,8 @@
+import Jimp = require("jimp");
 import { leftFlatness0 } from "./featureable.js";
 import { TokenText } from "./postprocessable.js";
+import { shift } from "./jimpable.js";
+import { getImageDifference, refImages } from "./trainable.js";
 
 // functions mutate original input
 export const steps: Record<string, (input: TokenText, settings: Record<string,any>) => void> = {
@@ -7,7 +10,9 @@ export const steps: Record<string, (input: TokenText, settings: Record<string,an
   ": Correction": correctColon,
   "- Correction": correctDash,
   "B/8 Correction": correctBandEight,
-  "B/8 Replacement": replaceBandEight
+  "B/8 Replacement": replaceBandEight,
+  "Garbage Removal": garbageRemoval,
+  "Gradient Ascent": gradientAscent
 };
 
 // user defined functinos for application-specific tasks
@@ -120,4 +125,147 @@ function replaceBandEight(input: TokenText, settings: Record<string,any>) {
       else if (line[x] == "B") input.setChar(y,x, replaceB);
     }
   }
+}
+
+function garbageRemoval(input: TokenText, settings: Record<string,any>) {
+  const threshold = settings.threshold as number;
+  const replacement = settings.removalChar[0] as string;
+  for (let y = 0; y < input.length; y++) {
+    const line = input.getText(y);
+    for (let x = 0; x < line.length; x++) {
+      if (input.getToken(y,x).adistance > threshold) input.setChar(y,x, replacement);
+    }
+  }
+}
+
+// subtly move character, and try to find a better match
+function gradientAscent(input: TokenText, settings: Record<string,any>) {
+  const whitelist = new Set<string>(settings.whitelist.split(""));
+  const maxDiff = settings["max-difference"] as number;
+
+  const moveUp = settings.step.up as number;
+  const moveDown = settings.step.down as number;
+  const moveLeft = settings.step.left as number;
+  const moveRight = settings.step.right as number;
+
+  const maxSteps = settings["max-steps"] as number;
+  const stepDivisor = settings["step-divisor"] as number;
+
+  for (let y = 0; y < input.length; y++) {
+    const line = input.getText(y);
+    for (let x = 0; x < line.length; x++) {
+      const char = line[x];
+      if (!whitelist.has(char)) continue; // char cannot be gradient-ascented
+      const token = input.getToken(y,x);
+      
+      let minDist: number = token.adistance;
+      let minChar: string = token.value;
+      for (const possibleChar in token.distances) {
+        if (token.distances[possibleChar] > maxDiff) continue; // too different
+
+        // get direction to move in
+        const [minScore, bestX, bestY] = getBestDirection(token.img, possibleChar, moveUp, moveDown, moveLeft, moveRight);
+        let dirX = bestX;
+        let dirY = bestY;
+        if (minScore < minDist) {
+          minDist = minScore;
+          minChar = possibleChar;
+        }
+
+        // continue moving in that direction
+        let lastDist = minScore;
+        let offX = dirX;
+        let offY = dirY;
+        for (let i = 0; i <= maxSteps; i++) {
+          const score = getScoreInDirection(token.img, possibleChar, offX + dirX, offY + dirY);
+          
+          if (score > lastDist) {
+            dirX = Math.floor(dirX / stepDivisor);
+            dirY = Math.floor(dirY / stepDivisor);
+            if (dirX == 0 && dirY == 0) break; // dividing will make this unusable; give up
+          }
+          else { // "save" new position
+            offX += dirX;
+            offY += dirY;
+            lastDist = score;
+          }
+          
+          if (score < minDist) {
+            minDist = score;
+            minChar = possibleChar;
+          }
+        }
+      }
+
+      if (minChar != token.value) {
+        process.stdout.write(`  [${y+1},${x}: \x1b[36m${token.value}\x1b[0m -> \x1b[36m${minChar}\x1b[0m]`);
+        input.setChar(y,x, minChar);
+        for (const char in token.distances) {
+          token.distances[char] = token.distances[char] * token.adistance / minDist; // now a ratio of new min distance
+        }
+        token.adistance = minDist;
+      }
+    }
+  }
+  console.log(""); // new line
+}
+
+function getBestDirection(
+  img: Jimp,
+  char: string,
+  upStep: number,
+  downStep: number,
+  leftStep: number,
+  rightStep: number
+): [minScore:number, minX:number, minY:number] {
+  let minScore = Infinity;
+  let minX = 0;
+  let minY = 0;
+  if (upStep > 0) {
+    const score = getScoreInDirection(img,char, 0,-upStep);
+    if (score < minScore) {
+      minScore = score;
+      minY = -upStep;
+      minX = 0;
+    }
+  }
+  if (downStep > 0) {
+    const score = getScoreInDirection(img,char, 0,downStep);
+    if (score < minScore) {
+      minScore = score;
+      minY = downStep;
+      minX = 0;
+    }
+  }
+  if (leftStep > 0) {
+    const score = getScoreInDirection(img,char, -leftStep,0);
+    if (score < minScore) {
+      minScore = score;
+      minY = 0;
+      minX = -leftStep;
+    }
+  }
+  if (rightStep > 0) {
+    const score = getScoreInDirection(img,char, rightStep,0);
+    if (score < minScore) {
+      minScore = score;
+      minY = 0;
+      minX = rightStep;
+    }
+  }
+
+  return [minScore, minX, minY];
+}
+
+function getScoreInDirection(
+  img: Jimp,
+  char: string,
+  xOff: number,
+  yOff: number
+) {
+  const shiftedImg = shift(img, xOff,yOff);
+  return getImageDifference(
+    shiftedImg,
+    refImages[char]
+  );
 }

@@ -27,7 +27,7 @@ export function getLineCharBounds(
   //   globalMinY = Math.max(bounds.y2+1, globalMinY);
   // }
 
-  const maxX = img.bitmap.width;
+  const maxX = lastLine ? img.bitmap.width : getSetting<number>("charBounds.max-first-line-x-portion") * img.bitmap.width; // no [lastLine] means first line
 
   let lastCharBounds: Bounds = firstCharBounds;
   for (let i = 0; i < 200; i++) { // while(true), with built in limit

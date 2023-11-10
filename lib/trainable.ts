@@ -4,7 +4,7 @@ import { getSetting } from "./settings";
 import { extensionless } from "./fsExt";
 const fs = require("fs");
 
-const refImages: Record<string, Jimp> = {};
+export const refImages: Record<string, Jimp> = {};
 
 export function init() {
   const files = fs.readdirSync(__dirname + "/../io/training");
@@ -123,7 +123,7 @@ export async function recognizeFromTrainingDataset(tokens: Token[][]) {
   let i = 0;
   const lineCt = Object.keys(tokens).length;
   for (const line of tokens) {
-    process.stdout.write(`: ${++i}/${lineCt} lines processed\r`);
+    process.stdout.write(`: Recognizing Images | ${++i}/${lineCt} lines processed\r`);
     for (const token of line) {
       if (token.value == " ") continue; // ignore spaces
 
@@ -161,6 +161,7 @@ export async function recognizeFromTrainingDataset(tokens: Token[][]) {
       for (const char in token.distances) {
         token.distances[char] = token.distances[char] / minDistance; // normalize with respect to ;minDistance'
       }
+      token.adistance = minDistance;
 
       // assign best character
       token.value = minChar;
@@ -202,7 +203,7 @@ function formatImage(
 }
 
 // assume img1 and img2 have the same bounds
-function getImageDifference(
+export function getImageDifference(
   img1: Jimp,
   img2: Jimp
 ) {

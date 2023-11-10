@@ -23,6 +23,7 @@ function SRR(input: string, settings: Record<string,any>) { // remove ' that may
   return input.replace(SRRPattern, "");
 }
 
+// const sectionPattern = /( \s*|^).+?((?=  | \w+?:)|$)/gi;
 const sectionPattern = /( \s+|^).+?((?=  )|$)/gi;
 function format(input: string, settings: Record<string,any>) {
   const lines = input.split("\n");

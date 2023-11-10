@@ -1,6 +1,6 @@
 {
   "general": {
-    "infolder": "C:/Users/Nicholas/FTP/FOCAL/Categorized" // empty to use defualt (input/); specify with absolute path
+    "infolder": "C:\\Users\\Nicholas\\FTP\\FOCAL\\Categorized" // empty to use defualt (input/); specify with absolute path
   },
   "simplify": {
     "weights": {
@@ -28,7 +28,8 @@
     }
   },
   "charBounds": {
-    "max-x-portion": 0.5, // maximum distances from the left to be considered a character
+    "max-x-portion": 0.5, // maximum distances from the left to be considered a first character
+    "max-first-line-x-portion": 0.8, // maximum distance from the left to be considered a character in the first line
     "charSize": { // leave components at '0' to calculate automatically
       "x": 59,
       "y": 76,
@@ -75,7 +76,9 @@
       ": Correction": true,
       "- Correction": true,
       "B/8 Correction": false,
-      "B/8 Replacement": false
+      "B/8 Replacement": false,
+      "Garbage Removal": false,
+      "Gradient Ascent": true
     },
     "settings": {
       "; Correction": {},
@@ -92,6 +95,22 @@
       "B/8 Replacement": { // "null" indicates unknown
         "b-replacement-char": null,
         "8-replacement-char": null
+      },
+      "Garbage Removal": {
+        "threshold": 280000,
+        "removalChar": " "
+      },
+      "Gradient Ascent": {
+        "whitelist": "!#$%()/0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]",
+        "step": {
+          "up": 2,
+          "down": 2,
+          "left": 0,
+          "right": 0
+        },
+        "max-difference": 1.2,
+        "max-steps": 10,
+        "step-divisor": 1
       }
     }
   },
@@ -111,7 +130,7 @@
   // reads from output/, writes to postoutput/
   "post-postprocessing": { // uses only text data from a file, and relying on patterns // run individually with -text 1
     "enabled": {
-      "$ recognition": false,
+      "$ recognition": true,
       "Semicolon Remnant Removal": true,
       "trim trailing spaces": true,
       "trim empty lines": true,

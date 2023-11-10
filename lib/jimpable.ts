@@ -271,3 +271,28 @@ export function setPixelAt(
   img.bitmap.data[idx+1] = value * +!highlight;
   img.bitmap.data[idx+2] = value * +!highlight;
 }
+
+export function shift(
+  img: Jimp,
+  x: number,
+  y: number
+) {
+  const offset = 4 * (x + y*img.bitmap.width);
+
+  const shifted = img.clone();
+  shifted.scan(0,0, shifted.bitmap.width, shifted.bitmap.height, (x,y,idx) => {
+    if (idx < offset) { // out of bounds, write as white
+      shifted.bitmap.data[idx+0] = 0xFF;
+      shifted.bitmap.data[idx+1] = 0xFF;
+      shifted.bitmap.data[idx+2] = 0xFF;
+    }
+    else {
+      const value = img.bitmap.data[idx-offset];
+      shifted.bitmap.data[idx+0] = value;
+      shifted.bitmap.data[idx+1] = value;
+      shifted.bitmap.data[idx+2] = value;
+    }
+  });
+
+  return shifted;
+}

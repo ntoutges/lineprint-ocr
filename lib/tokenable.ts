@@ -1,5 +1,6 @@
 import Jimp = require("jimp");
-import { Bounds } from "./floodable.js"
+import { Bounds } from "./floodable.js";
+const fs = require("fs");
 
 export function getTextOrigion(
   boundsList: Bounds[][]
@@ -47,7 +48,8 @@ export type Token = {
     x: number,
     y: number
   },
-  distances: Record<string, number>
+  distances: Record<string, number>,
+  adistance: number // absolute distance
 }
 
 export function tokenizeBounds(
@@ -95,7 +97,8 @@ export function tokenizeBounds(
             x: 0,
             y: 0
           },
-          distances: {}
+          distances: {},
+          adistance: 0
         });
       }
 
@@ -104,7 +107,8 @@ export function tokenizeBounds(
         bounds,
         value: null, // value unknown
         center: null,
-        distances: {}
+        distances: {},
+        adistance: 0
       });
 
       lastCharX = bounds.x;
@@ -119,7 +123,7 @@ export function fillTokenImages(img: Jimp, tokens: Token[][]) {
   let i = 0;
   const lineCt = Object.keys(tokens).length;
   for (const line of tokens) {
-    process.stdout.write(`: ${++i}/${lineCt} lines processed\r`);
+    process.stdout.write(`: Separating Images | ${++i}/${lineCt} lines processed\r`);
     for (const token of line) {
       if (token.value != null) continue; // only retrieve those whose value is unknown
       token.img = img.clone().crop(
@@ -217,7 +221,11 @@ export function writeTokenImages(folder: string, tokens: Token[][]) {
     for (const i in tokens[line]) {
       const token = tokens[line][i];
       if (!token.img) continue;
-      token.img.write(`${folder}/${line}_${i}.png`);
+      const txt = Object.keys(token.distances).sort((a,b) => token.distances[a] - token.distances[b]).map((value) => `${value}: ${token.distances[value]}`).join("\n");
+      
+      const distance = token.adistance;
+      token.img.write(`${folder}/${line}/${i}_${distance}.png`);
+      fs.writeFileSync(`${folder}/${line}/${i}_${distance}.txt`, txt);
     }
   }
 }
@@ -227,7 +235,10 @@ export function writeCategorizedImages(folder: string, tokens: Record<string, To
     let i = 0;
     for (const token of tokens[char]) {
       if (!token.img) continue;
+      const txt = Object.keys(token.distances).sort((a,b) => token.distances[a] - token.distances[b]).map((value) => `${value}: ${token.distances[value]}`).join("\n");
+
       token.img.write(`${folder}/${char.charCodeAt(0)}_${token.bounds.y}_${i++}.png`);
+      fs.writeFileSync(`${folder}/${char.charCodeAt(0)}_${token.bounds.y}_${i++}.txt`, txt);
     }
   }
 }

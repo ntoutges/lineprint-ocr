@@ -126,7 +126,7 @@ function doConversion(
         }
         // NOTE: this program cannot work when the first character is not full (ie: ;/:)
         fillTokenImages(destrung, tokens);
-        writeMessage("separated images", name)
+        writeMessage("separated images", name);
         
         if ("train" in namedArgs) {
           try {
@@ -164,6 +164,8 @@ function doConversion(
             const str = tokenText.toString();
             if (doOutputIndividual) fs.writeFileSync(setExt(output, "txt"), str); // don't write output file if learning
             if (doCombo) addToCombo(index, str);
+
+            // writeTokenImages(__dirname + "/../io/output/test", tokens); // testing
 
             resolve("Ok.");
           });
