@@ -623,7 +623,6 @@ export function getAverageCharBounds(boundsList: Bounds[]) {
 
     widths.push(bounds.w + spaceDistance); // account for gap between chars (much more influential than vertical gap)
     heights.push(bounds.h);
-
   }
 
   widths.sort();

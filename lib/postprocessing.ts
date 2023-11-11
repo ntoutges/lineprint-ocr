@@ -1,8 +1,9 @@
 import Jimp = require("jimp");
-import { leftFlatness0 } from "./featureable.js";
+import { isStake, leftFlatness0 } from "./featureable.js";
 import { TokenText } from "./postprocessable.js";
 import { shift } from "./jimpable.js";
 import { getImageDifference, refImages } from "./trainable.js";
+import { Bounds } from "./floodable.js";
 
 // functions mutate original input
 export const steps: Record<string, (input: TokenText, settings: Record<string,any>) => void> = {
@@ -12,7 +13,8 @@ export const steps: Record<string, (input: TokenText, settings: Record<string,an
   "B/8 Correction": correctBandEight,
   "B/8 Replacement": replaceBandEight,
   "Garbage Removal": garbageRemoval,
-  "Gradient Ascent": gradientAscent
+  "Gradient Decent": gradientDecent,
+  "Dollar-Sign Disambiguation": dollarSignDisambiguation
 };
 
 // user defined functinos for application-specific tasks
@@ -139,7 +141,7 @@ function garbageRemoval(input: TokenText, settings: Record<string,any>) {
 }
 
 // subtly move character, and try to find a better match
-function gradientAscent(input: TokenText, settings: Record<string,any>) {
+function gradientDecent(input: TokenText, settings: Record<string,any>) {
   const whitelist = new Set<string>(settings.whitelist.split(""));
   const maxDiff = settings["max-difference"] as number;
 
@@ -268,4 +270,109 @@ function getScoreInDirection(
     shiftedImg,
     refImages[char]
   );
+}
+
+// take S/$, and see if it has the featurs on the top/bottom marking it as a $ (expand character to better find these)
+function dollarSignDisambiguation(input: TokenText, settings: Record<string,any>) {
+  const maxWidthRatio = settings.limits["max-width-ratio"] as number;
+  const minWidthRatio = settings.limits["min-width-ratio"] as number;
+
+  const minStakeWidthRatio = settings.stake["width-ratio"] as number;
+  const minStakeHeightRatio = settings.stake["height-ratio"] as number;
+
+  const requireBothStakes = settings.requireBothStakes as boolean;
+
+  for (let y = 0; y < input.length; y++) {
+    const line = input.getText(y);
+    for (let x = 0; x < line.length; x++) {
+      if (line[x] != "S" && line[x] != "$") continue; // ignore, not "S" or "$"
+      
+      const token = input.getToken(y,x);
+      const minWidth = Math.round(minWidthRatio * token.bounds.w);
+      const maxWidth = Math.round(maxWidthRatio * token.bounds.w);
+
+      // expand upwards until too wide, or not wide enough
+      const minY = expandYUntil(
+        input.img,
+        token.bounds.x,
+        token.bounds.y,
+        token.bounds.w,
+        -1, minWidth, maxWidth
+      );
+
+      // expand downwards until too wid, or not wide enough
+      const maxY = expandYUntil(
+        input.img,
+        token.bounds.x,
+        token.bounds.y2,
+        token.bounds.w,
+        1, minWidth, maxWidth
+      );
+
+      token.bounds.y = minY;
+      token.bounds.y2 = maxY;
+      token.bounds.h = maxY - minY;
+
+      const cX = token.bounds.x + Math.round(token.bounds.w / 2);
+      
+      const minStakeWidth = Math.round(minStakeWidthRatio * token.bounds.w);
+      const minStakeHeight = Math.round(minStakeHeightRatio * token.bounds.h);
+
+      let stakeCount = 0;
+      
+      // check if top-stake exists
+      stakeCount += +isStake(
+        input.img,
+        cX,token.bounds.y,
+        token.bounds,
+        1,
+        minStakeWidth,
+        minStakeHeight
+      );
+
+      // check if bottom-stake exists
+      stakeCount += +isStake(
+        input.img,
+        cX,token.bounds.y2,
+        token.bounds,
+        -1,
+        minStakeWidth,
+        minStakeHeight
+      );
+
+      const isDollarSign = stakeCount == 2 || (stakeCount == 1 && !requireBothStakes);
+      
+      if ((isDollarSign) == (line[x] == "$")) continue; // no difference, no point
+      if (isDollarSign) input.setChar(y,x, "$");
+      else input.setChar(y,x, "S");
+    }
+  }
+}
+
+function expandYUntil(
+  img: Jimp,
+  x: number,
+  y: number,
+  width: number,
+  step: number,
+  minWidth: number,
+  maxWidth: number
+) {
+  const extremeY = (step < 0) ? -1 : img.bitmap.height;
+  let lastTotal = -1;
+
+  for (let y2 = y+step; y2 != extremeY; y2 += step) {
+    let total = 0;
+    img.scan(x,y2, width,1, (_x,_y,idx) => {
+      if (img.bitmap.data[idx] != 0xFF) total++; 
+    });
+
+    if (lastTotal == -1) lastTotal = total;
+    
+    // out of bounds
+    if (total <= minWidth || (total > maxWidth && total > lastTotal)) return y2 - step;
+
+    lastTotal = total;
+  }
+  return extremeY - step;
 }

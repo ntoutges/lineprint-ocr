@@ -2,11 +2,14 @@ import { Token } from "./tokenable.js";
 import { steps } from "./postprocessing.js"
 import { steps2 } from "./postprocessing2.js";
 import { getSetting } from "./settings.js";
+import Jimp = require("jimp");
 
 export class TokenText {
   private readonly lines: {text: string, tokens: Token[]}[] = [];
+  readonly img: Jimp;
 
-  constructor(tokens: Token[][]) {
+  constructor(tokens: Token[][], img: Jimp) {
+    this.img = img;
     for (const line of tokens) {
       let text = "";
       for (const token of line) {

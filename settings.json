@@ -58,7 +58,7 @@
     }
   },
   "charHighlight": {
-    "doOutputBounds": false,
+    "doOutputBounds": true,
     "doHighlightSpace": false
   },
   "recognition": {
@@ -78,7 +78,8 @@
       "B/8 Correction": false,
       "B/8 Replacement": false,
       "Garbage Removal": false,
-      "Gradient Ascent": true
+      "Gradient Decent": true,
+      "Dollar-Sign Disambiguation": true
     },
     "settings": {
       "; Correction": {},
@@ -100,7 +101,7 @@
         "threshold": 280000,
         "removalChar": " "
       },
-      "Gradient Ascent": {
+      "Gradient Decent": {
         "whitelist": "!#$%()/0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]",
         "step": {
           "up": 2,
@@ -111,6 +112,17 @@
         "max-difference": 1.2,
         "max-steps": 10,
         "step-divisor": 1
+      },
+      "Dollar-Sign Disambiguation": {
+        "limits": {
+          "max-width-ratio": 0.4,
+          "min-width-ratio": 0.1
+        },
+        "stake": {
+          "width-ratio": 0.4,
+          "height-ratio": 0.07
+        },
+        "requireBothStakes": false
       }
     }
   },
@@ -121,8 +133,8 @@
     "disregard-header": false, // ignore first line of each page
     "autocorrect": {
       ".8YTE": ".BYTE",
-      ".0EF": ".DEF",
-      "$": "S" // far too similar--these will be corrected by some post-post processing (I hope...)
+      ".0EF": ".DEF"
+      // "$": "S" // far too similar--these will be corrected by some post-post processing (I hope...)
     },
     "prompt-unknown": [] // array of all characters to prompt user on
   },
@@ -130,12 +142,12 @@
   // reads from output/, writes to postoutput/
   "post-postprocessing": { // uses only text data from a file, and relying on patterns // run individually with -text 1
     "enabled": {
-      "$ recognition": true,
+      "$ recognition": false,
       "Semicolon Remnant Removal": true,
-      "trim trailing spaces": true,
-      "trim empty lines": true,
       "prune noise": true,
-      "format": true,
+      "trim trailing spaces": true,
+      "trim empty lines": false,
+      "format": false,
       "prompt garbage": false
     },
     "settings": {

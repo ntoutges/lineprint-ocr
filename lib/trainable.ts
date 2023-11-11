@@ -167,6 +167,7 @@ export async function recognizeFromTrainingDataset(tokens: Token[][]) {
       token.value = minChar;
     }
   }
+  console.log(""); // new line
   return tokens;
 }
 

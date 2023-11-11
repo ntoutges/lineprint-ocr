@@ -151,6 +151,7 @@ export function fillTokenImages(img: Jimp, tokens: Token[][]) {
       };
     }
   }
+  console.log(""); // new line
 
   return tokens; // in case I ever want the function to be daisy-chained
 }

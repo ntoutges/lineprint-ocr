@@ -153,7 +153,7 @@ function doConversion(
           }
 
           recognizeFromTrainingDataset(tokens).then(tokens => {
-            const tokenText = new TokenText(tokens);
+            const tokenText = new TokenText(tokens, pruned);
             doPostProcess(tokenText);
 
             // writeTokenImages(__dirname + "/../io/output/preview", tokens); // print out formated characters; testing

@@ -1,5 +1,6 @@
 import Jimp = require("jimp");
 import { getPixelAt } from "./jimpable.js";
+import { Bounds } from "./floodable.js";
 
 // based on difference between first pixel min and max distance from left
 export function leftFlatness0(img: Jimp, smoothing:number=5, topBottomBuffer: number) {
@@ -50,4 +51,36 @@ function median(val: number[]) {
   val.sort();
   if (val.length % 2 == 0) return (val[val.length/2] + val[(val.length/2-1)])/2;
   return val[(val.length-1)/2];
+}
+
+export function isStake(
+  img: Jimp,
+  cx: number,
+  y: number,
+  bounds: Bounds,
+  step: number,
+  minWidth: number,
+  minHeight: number
+) {
+  const extremeY = (step < 0) ? bounds.y-1 : bounds.y2+1;
+  let lines = 0;
+  for (let y2 = y+step; y2 != extremeY; y2 += step) {
+    let total = 0;
+    let minX = Infinity;
+    let maxX = 0;
+    img.scan(bounds.x,y2, bounds.w,1, (x2,_y,idx) => {
+      if (img.bitmap.data[idx] != 0xFF) {
+        total++;
+        minX = Math.min(minX, x2);
+        maxX = Math.max(maxX, x2);
+      }
+    });
+
+    // out of bounds
+    if (total > minWidth) break;
+    if (total == 0) continue; // don't count as line if empty
+
+    if (cx >= minX && cx <= maxX) lines++; // only add if vaguely centered
+  }
+  return lines >= minHeight;
 }

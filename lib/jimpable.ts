@@ -208,7 +208,7 @@ export function getCharTokens(img: Jimp) {
 
     const firstBounds = getLineCharBoundsBlind(img, 0,img.bitmap.height);
     avgChar = getAverageCharBounds(firstBounds);
-    avgChar.h = Math.round(avgChar.h * ySpaceRatio)
+    avgChar.h = Math.round(avgChar.h * ySpaceRatio);
     console.log("Character Bounds: ", avgChar)
   }
 
