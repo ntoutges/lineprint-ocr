@@ -112,7 +112,7 @@ function doConversion(
         const tokens = getCharTokens(pruned.clone());
         writeMessage("tokenized", name);
 
-        if (getSetting("charHighlight.doOutputBounds")) {
+        if (getSetting("charHighlight.doOutputBounds") && !getSetting("charHighlight.doOutputAfterPostProcess")) {
           const bounded = highlightChars(destrung.clone(), tokens);
           writeMessage("highlighted", name);
           bounded.write(output);
@@ -155,6 +155,13 @@ function doConversion(
           recognizeFromTrainingDataset(tokens).then(tokens => {
             const tokenText = new TokenText(tokens, pruned);
             doPostProcess(tokenText);
+
+            if (getSetting("charHighlight.doOutputBounds") && getSetting("charHighlight.doOutputAfterPostProcess")) {
+              const bounded = highlightChars(destrung.clone(), tokenText.tokens);
+              writeMessage("highlighted", name);
+              bounded.write(output);
+              writeMessage("wrote highlighted", name)
+            }
 
             // writeTokenImages(__dirname + "/../io/output/preview", tokens); // print out formated characters; testing
             writeMessage("compared characters", name);

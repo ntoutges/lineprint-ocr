@@ -1,5 +1,6 @@
 {
   "general": {
+    "infolder1": "",
     "infolder": "C:\\Users\\Nicholas\\FTP\\FOCAL\\Categorized" // empty to use defualt (input/); specify with absolute path
   },
   "simplify": {
@@ -59,7 +60,8 @@
   },
   "charHighlight": {
     "doOutputBounds": true,
-    "doHighlightSpace": false
+    "doHighlightSpace": true,
+    "doOutputAfterPostProcess": true
   },
   "recognition": {
     "do-separate": true, // quickly run program (testing)
@@ -78,6 +80,7 @@
       "B/8 Correction": false,
       "B/8 Replacement": false,
       "Garbage Removal": false,
+      "Space Correction": true,
       "Gradient Decent": true,
       "Dollar-Sign Disambiguation": true
     },
@@ -100,6 +103,11 @@
       "Garbage Removal": {
         "threshold": 280000,
         "removalChar": " "
+      },
+      "Space Correction": {
+        "max-offset-ratio": 0.3, // ratio of space size
+        "space-location-consensus": "uniform", // "mean" | "uniform",
+        "method": "del" // "add" | "del"
       },
       "Gradient Decent": {
         "whitelist": "!#$%()/0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]",

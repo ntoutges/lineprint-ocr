@@ -80,15 +80,16 @@ export function tokenizeBounds(
       const widthFactor = Math.round(gap / avgCharSize.w); // this should be 0/1 for no space, then 2+ for 1+ spaces
       
       // push spaces
-      const step = Math.floor(gap / widthFactor);
+      const step = gap / widthFactor;
       for (let j = 1; j < widthFactor; j++) { // loop [widthFactor-1] times
-        const offX = Math.floor(step * j);
+        const x1 = Math.round(lastCharX + step * j) + 1;
+        const x2 = Math.round(lastCharX + step * (j+1)) - 1;
         localTokens.push({
           bounds: {
-            w: step - 2,
+            w: x2 - x1,
             h: avgCharSize.h,
-            x: lastCharX + offX,
-            x2: lastCharX + offX + step - 2, // separates bounds
+            x: x1,
+            x2: x2, // separates bounds
             y: bounds.y,
             y2: bounds.y + avgCharSize.h
           },

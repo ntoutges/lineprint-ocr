@@ -4,6 +4,7 @@ import { TokenText } from "./postprocessable.js";
 import { shift } from "./jimpable.js";
 import { getImageDifference, refImages } from "./trainable.js";
 import { Bounds } from "./floodable.js";
+import { Token } from "./tokenable.js";
 
 // functions mutate original input
 export const steps: Record<string, (input: TokenText, settings: Record<string,any>) => void> = {
@@ -14,7 +15,8 @@ export const steps: Record<string, (input: TokenText, settings: Record<string,an
   "B/8 Replacement": replaceBandEight,
   "Garbage Removal": garbageRemoval,
   "Gradient Decent": gradientDecent,
-  "Dollar-Sign Disambiguation": dollarSignDisambiguation
+  "Dollar-Sign Disambiguation": dollarSignDisambiguation,
+  "Space Correction": spaceCorrection
 };
 
 // user defined functinos for application-specific tasks
@@ -375,4 +377,36 @@ function expandYUntil(
     lastTotal = total;
   }
   return extremeY - step;
+}
+
+function spaceCorrection(input: TokenText, settings: Record<string,any>) {
+  const offRatio = settings["max-offset-ratio"] as number;
+  const uniformConsensus = settings["space-location-consensus"] == "uniform";
+  const doAdd = settings.method == "add";
+
+  var stop = false;
+  input.forEachColumn((column, x) => {
+    const first = column[Object.keys(column)[0]] as Token;
+    let baseX = first.bounds.x + first.bounds.w/2; // assume uniform consensus
+    if (!uniformConsensus) {
+      baseX = 0; // reset
+      for (const y in column) { // sum to get average
+        const bounds = column[y].bounds;
+        baseX += bounds.x + bounds.w;
+      }
+      baseX /= Object.keys(column).length; // averaging step
+    }
+
+    // look at each token in column
+    for (const y in column) { // sum to get average
+      if (column[y].value != " ") continue; // only space can be modified
+
+      const bounds = column[y].bounds;
+      const center = bounds.x + bounds.w;
+      const diff = (center - baseX) / bounds.w;
+
+      if (doAdd && diff >= offRatio) input.spliceSpace(+y,x,1);    // some character too far forwards (ignore distance backwards), add to it
+      if (!doAdd && -diff >= offRatio) input.spliceSpace(+y,x,-1); // some character too far backwards (ignore distance forwards), remove it
+    }
+  });
 }
