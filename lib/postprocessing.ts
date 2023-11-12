@@ -2,12 +2,13 @@ import Jimp = require("jimp");
 import { isStake, leftFlatness0 } from "./featureable.js";
 import { TokenText } from "./postprocessable.js";
 import { shift } from "./jimpable.js";
-import { getImageDifference, refImages } from "./trainable.js";
+import { getEmptyImageDifference, getImageDifference, refImages } from "./trainable.js";
 import { Bounds } from "./floodable.js";
 import { Token } from "./tokenable.js";
 
 // functions mutate original input
 export const steps: Record<string, (input: TokenText, settings: Record<string,any>) => void> = {
+  "Empty Space Correction": emptySpaceDetection,
   "; Correction": correctSemicolon,
   ": Correction": correctColon,
   "- Correction": correctDash,
@@ -20,6 +21,23 @@ export const steps: Record<string, (input: TokenText, settings: Record<string,an
 };
 
 // user defined functinos for application-specific tasks
+
+function emptySpaceDetection(input: TokenText, settings: Record<string,any>) {
+  for (let y = 0; y < input.length; y++) {
+    const line = input.getText(y);
+    for (let x = 1; x < line.length; x++) {
+      if (line[x] == " ") continue; // ignore
+      
+      const token = input.getToken(y,x);
+      const spaceDistance = getEmptyImageDifference(token.img);
+
+      // should be space, not... whatever it was
+      if (spaceDistance < token.adistance) {
+        input.setChar(y,x, " ");
+      }
+    }
+  }
+}
 
 function correctSemicolon(input: TokenText, settings: Record<string,any>) {
   for (let y = 0; y < input.length; y++) {
@@ -162,7 +180,7 @@ function gradientDescent(input: TokenText, settings: Record<string,any>) {
     const line = input.getText(y);
     for (let x = 0; x < line.length; x++) {
       const char = line[x];
-      if (!whitelist.has(char) && !ignoreWhitelist) continue; // char cannot be gradient-ascented
+      if (char == " " || (!whitelist.has(char) && !ignoreWhitelist)) continue; // char cannot be gradient-ascented
       const token = input.getToken(y,x);
       
       let minDist: number = token.adistance;
@@ -214,7 +232,7 @@ function gradientDescent(input: TokenText, settings: Record<string,any>) {
       }
 
       if (minChar != token.value) {
-        process.stdout.write(`  [${y+1},${x}: \x1b[36m${token.value}\x1b[0m -> \x1b[36m${minChar}\x1b[0m]`);
+        process.stdout.write(`  [${y+1},${x+1}: \x1b[36m${token.value}\x1b[0m -> \x1b[36m${minChar}\x1b[0m]`);
         input.setChar(y,x, minChar);
         for (const char in token.distances) {
           token.distances[char] = token.distances[char] * token.adistance / minDist; // now a ratio of new min distance
@@ -393,20 +411,29 @@ function expandYUntil(
 
 function spaceCorrection(input: TokenText, settings: Record<string,any>) {
   const offRatio = settings["max-offset-ratio"] as number;
-  const uniformConsensus = settings["space-location-consensus"] == "uniform";
+  const consensus = settings["space-location-consensus"] as string;
   const doAdd = settings.method == "add";
 
   var stop = false;
   input.forEachColumn((column, x) => {
     const first = column[Object.keys(column)[0]] as Token;
-    let baseX = first.bounds.x + first.bounds.w/2; // assume uniform consensus
-    if (!uniformConsensus) {
+    let baseX = first.bounds.x + first.bounds.w/2; // assume uniform consensus (take bounds of first line as gospel)
+    if (consensus == "mean") {
       baseX = 0; // reset
       for (const y in column) { // sum to get average
         const bounds = column[y].bounds;
-        baseX += bounds.x + bounds.w;
+        baseX += bounds.x + bounds.w/2;
       }
       baseX /= Object.keys(column).length; // averaging step
+    }
+    else if (consensus == "printable-uniform") { // take bounds of first line (with non-space characters in this position) as gospel; Otherwise, just go with uniform
+      for (const y in column) {
+        if (column[y].value != " ") {
+          const bounds = column[y].bounds;
+          baseX = bounds.x + bounds.w/2
+          break;
+        }
+      }
     }
 
     // look at each token in column

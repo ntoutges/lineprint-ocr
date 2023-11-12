@@ -296,3 +296,30 @@ export function shift(
 
   return shifted;
 }
+
+export function whitewashRed(
+  img: Jimp
+) {
+  const minRGRatio = getSetting<number>("whitewashRed.min-red/green-ratio");
+  const minRBRatio = getSetting<number>("whitewashRed.min-red/blue-ratio");
+  const minRedValue = getSetting<number>("whitewashRed.min-red-value");
+  const fillRadius = getSetting<number>("whitewashRed.fill-radius");
+
+  const whitewashed = img.clone();
+  img.scan(0,0, img.bitmap.width, img.bitmap.height, (x,y, idx) => {
+    const r = img.bitmap.data[idx+0];
+    const g = img.bitmap.data[idx+1];
+    const b = img.bitmap.data[idx+2];
+
+    // color determined to be red; white wash
+    if (r >= minRedValue && g*minRGRatio <= r && b*minRBRatio <= r) {
+      for (let i = -fillRadius+1; i < fillRadius; i++) {
+        for (let j = -fillRadius+1; j < fillRadius; j++) {
+          setPixelAt(whitewashed, x+i,y+j, 0xFF);
+        }
+      }
+    }
+  });
+
+  return whitewashed;
+}

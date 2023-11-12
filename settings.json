@@ -1,7 +1,13 @@
 {
   "general": {
-    "infolder1": "",
-    "infolder": "C:\\Users\\Nicholas\\FTP\\FOCAL\\Categorized" // empty to use defualt (input/); specify with absolute path
+    "infolder": "",
+    "infolder1": "C:\\Users\\Nicholas\\FTP\\FOCAL\\Categorized" // empty to use defualt (input/); specify with absolute path
+  },
+  "whitewashRed": { // remove red pen markings
+    "min-red/green-ratio": 1.5,
+    "min-red/blue-ratio": 1.5,
+    "min-red-value": 100,
+    "fill-radius": 2
   },
   "simplify": {
     "weights": {
@@ -10,7 +16,7 @@
       "b": 0.33,
       "base": 0.9
     },
-    "threshold": 10
+    "threshold": 15
   },
   "denoise": { // assumes that img has already been simplified
     "limit": 300, // minimum size a blob must be to cound as real
@@ -64,8 +70,8 @@
     "doOutputAfterPostProcess": true
   },
   "recognition": {
-    "do-separate": true, // quickly run program (testing)
-    "do-recognition": true, // quickly run program (testing)
+    "do-separate": true, // false = quickly run program (testing)
+    "do-recognition": true, // false = quickly run program (testing)
 
     // amount that the progam will try to move the image to the center
     "x-center-weight": 1,
@@ -74,13 +80,14 @@
   },
   "postprocessing": {
     "enabled": {
+      "Empty Space Correction": true,
       "; Correction": true,
       ": Correction": true,
       "- Correction": true,
       "B/8 Correction": false,
       "B/8 Replacement": false,
       "Garbage Removal": false,
-      "Space Correction": true,
+      "Space Correction": false,
       "Gradient Descent": true,
       "Dollar-Sign Disambiguation": true
     },
@@ -106,7 +113,7 @@
       },
       "Space Correction": {
         "max-offset-ratio": 0.3, // ratio of space size
-        "space-location-consensus": "mean", // "mean" | "uniform",
+        "space-location-consensus": "mean", // "mean" | "uniform" | "printable-uniform",
         "method": "del" // "add" | "del"
       },
       "Gradient Descent": {

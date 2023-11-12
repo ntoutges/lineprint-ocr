@@ -2,7 +2,7 @@ import Jimp = require("jimp");
 const fs = require("fs");
 
 import { appendToName, extensionless, getAllFiles, setExt, toAbsoluteInput, toAbsoluteOutput } from "./fsExt.js";
-import { denoise, destring, getCharTokens, highlightChars, horizontalPrune, simplify } from "./jimpable.js";
+import { denoise, destring, getCharTokens, highlightChars, horizontalPrune, simplify, whitewashRed } from "./jimpable.js";
 import { lap, startTimer } from "./timer.js";
 import { getSetting } from "./settings.js";
 import { toText } from "./textable.js";
@@ -100,16 +100,18 @@ function doConversion(
         if (err) console.error(err);
         writeMessage(`successfully read`, name);
 
-        const simplified = simplify(img);
+        const whitewashed = whitewashRed(img);
+        writeMessage("whitewashed", name);
+        const simplified = simplify(whitewashed);
         writeMessage("simplified", name);
-        const destrung = destring(simplified.clone());
+        const destrung = destring(simplified);
         writeMessage("destrung", name);
-        const denoised = denoise(destrung.clone());
+        const denoised = denoise(destrung);
         writeMessage("denoised", name);
-        const pruned = horizontalPrune(denoised.clone());
+        const pruned = horizontalPrune(denoised);
         writeMessage("pruned", name);
 
-        const tokens = getCharTokens(pruned.clone());
+        const tokens = getCharTokens(pruned);
         writeMessage("tokenized", name);
 
         if (getSetting("charHighlight.doOutputBounds") && !getSetting("charHighlight.doOutputAfterPostProcess")) {

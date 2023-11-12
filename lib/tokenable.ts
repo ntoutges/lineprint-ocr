@@ -124,7 +124,7 @@ export function fillTokenImages(img: Jimp, tokens: Token[][]) {
   let i = 0;
   const lineCt = Object.keys(tokens).length;
   for (const line of tokens) {
-    process.stdout.write(`: Separating Images | ${++i}/${lineCt} lines processed\r`);
+    process.stdout.write(`: Separating Characters | ${++i}/${lineCt} lines processed\r`);
     for (const token of line) {
       if (token.value != null) continue; // only retrieve those whose value is unknown
       token.img = img.clone().crop(
