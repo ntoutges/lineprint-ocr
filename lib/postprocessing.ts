@@ -14,7 +14,7 @@ export const steps: Record<string, (input: TokenText, settings: Record<string,an
   "B/8 Correction": correctBandEight,
   "B/8 Replacement": replaceBandEight,
   "Garbage Removal": garbageRemoval,
-  "Gradient Decent": gradientDecent,
+  "Gradient Descent": gradientDescent,
   "Dollar-Sign Disambiguation": dollarSignDisambiguation,
   "Space Correction": spaceCorrection
 };
@@ -143,15 +143,18 @@ function garbageRemoval(input: TokenText, settings: Record<string,any>) {
 }
 
 // subtly move character, and try to find a better match
-function gradientDecent(input: TokenText, settings: Record<string,any>) {
+function gradientDescent(input: TokenText, settings: Record<string,any>) {
   const whitelist = new Set<string>(settings.whitelist.split(""));
   const maxDiff = settings["max-difference"] as number;
+
+  const ignoreWhitelist = whitelist.size == 0;
 
   const moveUp = settings.step.up as number;
   const moveDown = settings.step.down as number;
   const moveLeft = settings.step.left as number;
   const moveRight = settings.step.right as number;
 
+  const maxRoounds = settings["max-rounds"] as number;
   const maxSteps = settings["max-steps"] as number;
   const stepDivisor = settings["step-divisor"] as number;
 
@@ -159,45 +162,54 @@ function gradientDecent(input: TokenText, settings: Record<string,any>) {
     const line = input.getText(y);
     for (let x = 0; x < line.length; x++) {
       const char = line[x];
-      if (!whitelist.has(char)) continue; // char cannot be gradient-ascented
+      if (!whitelist.has(char) && !ignoreWhitelist) continue; // char cannot be gradient-ascented
       const token = input.getToken(y,x);
       
       let minDist: number = token.adistance;
       let minChar: string = token.value;
+
       for (const possibleChar in token.distances) {
         if (token.distances[possibleChar] > maxDiff) continue; // too different
 
-        // get direction to move in
-        const [minScore, bestX, bestY] = getBestDirection(token.img, possibleChar, moveUp, moveDown, moveLeft, moveRight);
-        let dirX = bestX;
-        let dirY = bestY;
-        if (minScore < minDist) {
-          minDist = minScore;
-          minChar = possibleChar;
-        }
+        let totalOffX = 0;
+        let totalOffY = 0;
 
-        // continue moving in that direction
-        let lastDist = minScore;
-        let offX = dirX;
-        let offY = dirY;
-        for (let i = 0; i <= maxSteps; i++) {
-          const score = getScoreInDirection(token.img, possibleChar, offX + dirX, offY + dirY);
-          
-          if (score > lastDist) {
-            dirX = Math.floor(dirX / stepDivisor);
-            dirY = Math.floor(dirY / stepDivisor);
-            if (dirX == 0 && dirY == 0) break; // dividing will make this unusable; give up
-          }
-          else { // "save" new position
-            offX += dirX;
-            offY += dirY;
-            lastDist = score;
-          }
-          
-          if (score < minDist) {
-            minDist = score;
+        for (let round = 0; round < maxRoounds; round++) {
+          // get direction to move in
+          const [minScore, bestX, bestY] = getBestDirection(token.img, possibleChar, moveUp, moveDown, moveLeft, moveRight);
+          let dirX = bestX;
+          let dirY = bestY;
+          if (minScore < minDist) {
+            minDist = minScore;
             minChar = possibleChar;
           }
+
+          // continue moving in that direction
+          let lastDist = minScore;
+          let offX = dirX;
+          let offY = dirY;
+          for (let i = 0; i <= maxSteps; i++) {
+            const score = getScoreInDirection(token.img, possibleChar, offX + dirX + totalOffX, offY + dirY + totalOffY);
+            
+            if (score > lastDist) {
+              dirX = Math.floor(dirX / stepDivisor);
+              dirY = Math.floor(dirY / stepDivisor);
+              if (dirX == 0 && dirY == 0) break; // dividing will make this unusable; give up
+            }
+            else { // "save" new position
+              offX += dirX;
+              offY += dirY;
+              lastDist = score;
+            }
+            
+            if (score < minDist) {
+              minDist = score;
+              minChar = possibleChar;
+            }
+          }
+
+          totalOffX += offX;
+          totalOffY += offY;
         }
       }
 

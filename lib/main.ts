@@ -155,12 +155,13 @@ function doConversion(
           recognizeFromTrainingDataset(tokens).then(tokens => {
             const tokenText = new TokenText(tokens, pruned);
             doPostProcess(tokenText);
+            writeMessage("Post-Processed", name);
 
             if (getSetting("charHighlight.doOutputBounds") && getSetting("charHighlight.doOutputAfterPostProcess")) {
               const bounded = highlightChars(destrung.clone(), tokenText.tokens);
               writeMessage("highlighted", name);
               bounded.write(output);
-              writeMessage("wrote highlighted", name)
+              writeMessage("wrote highlighted", name);
             }
 
             // writeTokenImages(__dirname + "/../io/output/preview", tokens); // print out formated characters; testing
@@ -172,7 +173,7 @@ function doConversion(
             if (doOutputIndividual) fs.writeFileSync(setExt(output, "txt"), str); // don't write output file if learning
             if (doCombo) addToCombo(index, str);
 
-            // writeTokenImages(__dirname + "/../io/output/test", tokens); // testing
+            writeTokenImages(__dirname + "/../io/output/test", tokens); // testing
 
             resolve("Ok.");
           });
@@ -189,7 +190,7 @@ function writeMessage(
   name: string
 ) {
   const time = lap();
-  const timeStr = `${Math.round(time / 10) / 100}s`;
+  const timeStr = `${(Math.round(time / 10) / 100).toFixed(2)}s`;
   console.log(`: [\x1b[36m${name}\x1b[0m] ${message} (\x1b[33m${timeStr}\x1b[0m)`);
 }
 

@@ -122,8 +122,13 @@ export async function recognizeFromTrainingDataset(tokens: Token[][]) {
 
   let i = 0;
   const lineCt = Object.keys(tokens).length;
+  process.stdout.write(`: Recognizing Images | 0/${lineCt} lines processed`);
+  let lastLineLen = 0;
   for (const line of tokens) {
-    process.stdout.write(`: Recognizing Images | ${++i}/${lineCt} lines processed\r`);
+    const outLine = `\r: Recognizing Images | ${++i}/${lineCt} lines processed "${line.map(val => val.value ?? "?").join("").padEnd(line.length, " ")}"`;
+    process.stdout.write(outLine.padEnd(lastLineLen, " "));
+    lastLineLen = outLine.length;
+
     for (const token of line) {
       if (token.value == " ") continue; // ignore spaces
 
@@ -165,6 +170,8 @@ export async function recognizeFromTrainingDataset(tokens: Token[][]) {
 
       // assign best character
       token.value = minChar;
+
+      process.stdout.write(`\r: Recognizing Images | ${i}/${lineCt} lines processed "${line.map(val => val.value ?? "?").join("").padEnd(line.length, " ")}"`);
     }
   }
   console.log(""); // new line

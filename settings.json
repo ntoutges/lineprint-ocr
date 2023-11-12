@@ -81,7 +81,7 @@
       "B/8 Replacement": false,
       "Garbage Removal": false,
       "Space Correction": true,
-      "Gradient Decent": true,
+      "Gradient Descent": true,
       "Dollar-Sign Disambiguation": true
     },
     "settings": {
@@ -106,19 +106,20 @@
       },
       "Space Correction": {
         "max-offset-ratio": 0.3, // ratio of space size
-        "space-location-consensus": "uniform", // "mean" | "uniform",
+        "space-location-consensus": "mean", // "mean" | "uniform",
         "method": "del" // "add" | "del"
       },
-      "Gradient Decent": {
-        "whitelist": "!#$%()/0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]",
+      "Gradient Descent": {
+        "whitelist": "",
         "step": {
           "up": 2,
           "down": 2,
-          "left": 0,
-          "right": 0
+          "left": 1,
+          "right": 1
         },
         "max-difference": 1.2,
-        "max-steps": 10,
+        "max-rounds": 2, // amount of times to choose a direction to move in
+        "max-steps": 10, // amount of times to move in a given direction
         "step-divisor": 1
       },
       "Dollar-Sign Disambiguation": {
