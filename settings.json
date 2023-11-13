@@ -10,13 +10,17 @@
     "fill-radius": 2
   },
   "simplify": {
-    "weights": {
-      "r": 0.33,
-      "g": 0.33,
-      "b": 0.33,
-      "base": 0.9
+    "method": "basic", // "basic" | "sauvola",
+    "doOutput": true,
+    "basic": {
+      "base-weight": 0.9,
+      "threshold": -15
     },
-    "threshold": 15
+    "sauvola": {
+      "radius": 3,  // size of moving window
+      "R": 12, // "dynamic range of standard deviation"
+      "k": 0.5  // "constant value betwee 0.2 and 0.5"
+    }
   },
   "denoise": { // assumes that img has already been simplified
     "limit": 300, // minimum size a blob must be to cound as real
@@ -67,7 +71,7 @@
   "charHighlight": {
     "doOutputBounds": true,
     "doHighlightSpace": true,
-    "doOutputAfterPostProcess": true
+    "doOutputAfterPostProcess": false
   },
   "recognition": {
     "do-separate": true, // false = quickly run program (testing)
