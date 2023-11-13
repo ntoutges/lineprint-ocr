@@ -1,7 +1,7 @@
 {
   "general": {
-    "infolder": "",
-    "infolder1": "C:\\Users\\Nicholas\\FTP\\FOCAL\\Categorized" // empty to use defualt (input/); specify with absolute path
+    "infolder1": "",
+    "infolder": "C:\\Users\\Nicholas\\FTP\\FOCAL\\Categorized" // empty to use defualt (input/); specify with absolute path
   },
   "whitewashRed": { // remove red pen markings
     "min-red/green-ratio": 1.5,
@@ -10,13 +10,17 @@
     "fill-radius": 2
   },
   "simplify": {
-    "weights": {
-      "r": 0.33,
-      "g": 0.33,
-      "b": 0.33,
-      "base": 0.9
+    "method": "basic", // "basic" | "sauvola",
+    "doOutput": true,
+    "basic": {
+      "base-weight": 0.9,
+      "threshold": 10
     },
-    "threshold": 15
+    "sauvola": {
+      "radius": 3,  // size of moving window
+      "R": 12, // "dynamic range of standard deviation"
+      "k": 0.5  // "constant value betwee 0.2 and 0.5"
+    }
   },
   "denoise": { // assumes that img has already been simplified
     "limit": 300, // minimum size a blob must be to cound as real
@@ -36,7 +40,7 @@
   },
   "charBounds": {
     "max-x-portion": 0.5, // maximum distances from the left to be considered a first character
-    "max-first-line-x-portion": 0.8, // maximum distance from the left to be considered a character in the first line
+    "max-first-line-x-portion": 0.3, // maximum distance from the last character to be considered a character in the first line
     "charSize": { // leave components at '0' to calculate automatically
       "x": 59,
       "y": 76,

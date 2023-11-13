@@ -27,12 +27,12 @@ export function getLineCharBounds(
   //   globalMinY = Math.max(bounds.y2+1, globalMinY);
   // }
 
-  const maxX = lastLine ? img.bitmap.width : getSetting<number>("charBounds.max-first-line-x-portion") * img.bitmap.width; // no [lastLine] means first line
+  const nextCharAdd = getSetting<number>("charBounds.max-first-line-x-portion") * img.bitmap.width;
+  let maxX = lastLine ? img.bitmap.width : nextCharAdd; // no [lastLine] means first line
 
   let lastCharBounds: Bounds = firstCharBounds;
+  let minX = 0;
   for (let i = 0; i < 200; i++) { // while(true), with built in limit
-    const minX = lastCharBounds.x2 + 1;
-    
     const midpoint = lastCharBounds.y + Math.floor(lastCharBounds.h/2)
     
     let minY = midpoint - yBuffer;
@@ -48,6 +48,7 @@ export function getLineCharBounds(
       minY,maxY
     );
     if (!charBounds) break;
+    maxX = Math.max(charBounds.x2 + nextCharAdd, maxX);
 
     let widthFactor = charBounds.w / avgCharBounds.w;
     let heightFactor = charBounds.h / avgCharBounds.h;
@@ -141,6 +142,10 @@ export function getLineCharBounds(
     if (charBounds.x <= lastCharBounds.x + lastCharBounds.w * 0.5) {
       boundsList.pop(); // remove last char      
     }
+    if (charBounds.w <= 0) { // something bad happened... ignore
+      minX++; // advance
+      continue;
+    }
 
     // all must conform to this
     if (uniformYBounds == "uniform") {
@@ -149,6 +154,8 @@ export function getLineCharBounds(
       charBounds.h = firstCharBounds.h; // cannot influence height
       charBounds.y2 = firstCharBounds.y2 + influence;
     }
+
+    minX = charBounds.x2 + 1;
 
     boundsList.push(charBounds);
     lastCharBounds = charBounds;

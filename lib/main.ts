@@ -101,9 +101,9 @@ function doConversion(
         writeMessage(`successfully read`, name);
 
         const whitewashed = whitewashRed(img);
-        writeMessage("whitewashed", name);
+        writeMessage("whitewashed", name); // remove red streaks
         const simplified = simplify(whitewashed);
-        writeMessage("simplified", name);
+        writeMessage("simplified", name); // convert to pure black/white pixels
         const destrung = destring(simplified);
         writeMessage("destrung", name);
         const denoised = denoise(destrung);
@@ -113,6 +113,11 @@ function doConversion(
 
         const tokens = getCharTokens(pruned);
         writeMessage("tokenized", name);
+
+        if (getSetting("simplify.doOutput")) {
+          simplified.write(appendToName(output, "-simplified"));
+          writeMessage("wrote simplified", name);
+        }
 
         if (getSetting("charHighlight.doOutputBounds") && !getSetting("charHighlight.doOutputAfterPostProcess")) {
           const bounded = highlightChars(destrung.clone(), tokens);
