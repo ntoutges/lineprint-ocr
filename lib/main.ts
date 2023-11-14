@@ -186,7 +186,7 @@ function doConversion(
             if (doOutputIndividual) fs.writeFileSync(setExt(output, "txt"), str); // don't write output file if learning
             if (doCombo) addToCombo(index, str);
 
-            writeTokenImages(__dirname + "/../io/output/test", tokens); // testing
+            writeTokenImages(__dirname + "/../io/output/test", tokenText.tokens); // testing
 
             resolve("Ok.");
           });

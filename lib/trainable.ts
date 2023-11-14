@@ -212,14 +212,25 @@ function formatImage(
 
 // assume img1 and img2 have the same bounds
 export function getImageDifference(
-  img1: Jimp,
-  img2: Jimp
+  test: Jimp,
+  model: Jimp
 ) {
+  const posWeight = getSetting<number>("difference.weights.positive");
+  const negWeight = getSetting<number>("difference.weights.negative");
+  const mode = getSetting<string>("difference.mode");
+
   let totalDist = 0;
-  img1.scan(0,0, img1.bitmap.width, img1.bitmap.height, (x,y,idx) => {
-    totalDist += Math.abs(img1.bitmap.data[idx] - img2.bitmap.data[idx]);
+  let totalPx = 0;
+  test.scan(0,0, test.bitmap.width, test.bitmap.height, (x,y,idx) => {
+    const testVal = test.bitmap.data[idx];
+    const diff = testVal - model.bitmap.data[idx];
+    if (diff != 0xff) totalPx++;
+    
+    totalDist += (diff < 0) ? -negWeight * diff : posWeight * diff;
   });
-  return totalDist;
+
+  if (mode == "relative") return totalPx / totalDist;
+  return totalDist; // absolute
 }
 
 function getEmptyImageDifference(

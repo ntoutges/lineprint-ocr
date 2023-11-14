@@ -169,7 +169,11 @@ function gradientDescent(input: TokenText, settings: Record<string,any>) {
       let minChar: string = token.value;
 
       for (const possibleChar in token.distances) {
-        if (token.distances[possibleChar] > maxDiff) continue; // too different
+        if (token.distances[possibleChar] > maxDiff) {
+          token.distances[possibleChar] *= token.adistance; // allow division to work1 later
+          continue; // too different
+        }
+        token.distances[possibleChar] *= token.adistance; // allow division to work later
 
         let totalOffX = 0;
         let totalOffY = 0;
@@ -200,6 +204,7 @@ function gradientDescent(input: TokenText, settings: Record<string,any>) {
               offX += dirX;
               offY += dirY;
               lastDist = score;
+              token.distances[possibleChar] = score;
             }
             
             if (score < minDist) {
@@ -216,10 +221,13 @@ function gradientDescent(input: TokenText, settings: Record<string,any>) {
       if (minChar != token.value) {
         process.stdout.write(`  [${y+1},${x}: \x1b[36m${token.value}\x1b[0m -> \x1b[36m${minChar}\x1b[0m]`);
         input.setChar(y,x, minChar);
-        for (const char in token.distances) {
-          token.distances[char] = token.distances[char] * token.adistance / minDist; // now a ratio of new min distance
+        if (minChar == "C") {
+          console.log(token.distances, token.adistance, minDist)
         }
-        token.adistance = minDist;
+      }
+      token.adistance = minDist;
+      for (const char in token.distances) {
+        token.distances[char] = token.distances[char] / minDist; // now a ratio of new min distance
       }
     }
   }

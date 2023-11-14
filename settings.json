@@ -9,12 +9,6 @@
     "min-red-value": 100,
     "fill-radius": 2
   },
-  "whitewashRed": { // remove red pen markings
-    "min-red/green-ratio": 1.5,
-    "min-red/blue-ratio": 1.5,
-    "min-red-value": 100,
-    "fill-radius": 2
-  },
   "simplify": {
     "mode": "basic", // "basic" | "sauvola"
     "doOutput": false,
@@ -86,7 +80,14 @@
     // amount that the progam will try to move the image to the center
     "x-center-weight": 1,
     "y-center-weight": 0.5, // 0 means y-centering won't apply at all
-    "doOutputIndividual": false
+    "doOutputIndividual": true
+  },
+  "difference": {
+    "mode": "absolute", // "absolute" | "relative"
+    "weights": {
+      "positive": 1, // exists in test, but not mode
+      "negative": 1 // exists in model, but not test
+    }
   },
   "postprocessing": {
     "enabled": {
@@ -128,8 +129,8 @@
       "Gradient Descent": {
         "whitelist": "",
         "step": {
-          "up": 2,
-          "down": 2,
+          "up": 1,
+          "down": 1,
           "left": 1,
           "right": 1
         },
