@@ -100,9 +100,11 @@ function doConversion(
         if (err) console.error(err);
         writeMessage(`successfully read`, name);
 
-        const simplified = simplify(img);
-        writeMessage("simplified", name);
-        const destrung = destring(simplified.clone());
+        const whitewashed = whitewashRed(img);
+        writeMessage("whitewashed", name); // remove red streaks
+        const simplified = simplify(whitewashed);
+        writeMessage("simplified", name); // convert to pure black/white pixels
+        const destrung = destring(simplified);
         writeMessage("destrung", name);
         const denoised = denoise(destrung.clone());
         writeMessage("denoised", name);

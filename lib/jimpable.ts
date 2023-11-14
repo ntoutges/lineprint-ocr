@@ -6,6 +6,7 @@ import { getAverageCharBounds, getLineCharBounds, getLineCharBoundsBlind, getLin
 import { categorizeRegions, getPrunableRegions, getRegions, groupRegions, prunePrunableRegions } from "./prunable.js";
 import { Token, getLeftmostBound, getTextOrigion, tokenizeBounds } from "./tokenable.js";
 import { basicThreshold, sauvola } from "./threshold.js";
+import { basicThreshold, sauvola } from "./threshold.js";
 
 export function simplify(img: Jimp) {
   const method = getSetting<string>("simplify.method");
