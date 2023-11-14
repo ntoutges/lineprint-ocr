@@ -3,14 +3,24 @@
     "infolder1": "",
     "infolder": "C:\\Users\\Nicholas\\FTP\\FOCAL\\Categorized" // empty to use defualt (input/); specify with absolute path
   },
+  "whitewashRed": { // remove red pen markings
+    "min-red/green-ratio": 1.5,
+    "min-red/blue-ratio": 1.5,
+    "min-red-value": 100,
+    "fill-radius": 2
+  },
   "simplify": {
-    "weights": {
-      "r": 0.33,
-      "g": 0.33,
-      "b": 0.33,
-      "base": 0.9
+    "mode": "basic", // "basic" | "sauvola"
+    "doOutput": false,
+    "basic": {
+      "base": 0.9,
+      "threshold": 10
     },
-    "threshold": 10
+    "sauvola": {
+      "radius": 3,
+      "R": 14,
+      "k": 0.5
+    }
   },
   "denoise": { // assumes that img has already been simplified
     "limit": 300, // minimum size a blob must be to cound as real
@@ -64,8 +74,8 @@
     "doOutputAfterPostProcess": true
   },
   "recognition": {
-    "do-separate": true, // quickly run program (testing)
-    "do-recognition": true, // quickly run program (testing)
+    "do-separate": true, // false = quickly run program (testing)
+    "do-recognition": true, // false = quickly run program (testing)
 
     // amount that the progam will try to move the image to the center
     "x-center-weight": 1,

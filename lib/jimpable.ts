@@ -5,51 +5,28 @@ import { Bounds, floodFill, floodFillAdd, floodFillBeyond, floodFillUntil } from
 import { getAverageCharBounds, getLineCharBounds, getLineCharBoundsBlind, getLineFirstCharBounds, getTilt } from "./boundable.js";
 import { categorizeRegions, getPrunableRegions, getRegions, groupRegions, prunePrunableRegions } from "./prunable.js";
 import { Token, getLeftmostBound, getTextOrigion, tokenizeBounds } from "./tokenable.js";
+import { basicThreshold, sauvola } from "./threshold.js";
 
 export function simplify(img: Jimp) {
-  const rWeight = getSetting<number>("simplify.weights.r");
-  const gWeight = getSetting<number>("simplify.weights.g");
-  const bWeight = getSetting<number>("simplify.weights.b");
-  const threshold = getSetting<number>("simplify.threshold");
-  
-  const baseWeight = getSetting<number>("simplify.weights.base");
+  const mode = getSetting<string>("simplify.mode");
 
-  let base = 0;
-  if (baseWeight != 0) { // used to adjust for lighting
-    let pixelCt = img.bitmap.width * img.bitmap.height;
-    let total = 0n; // bigint to handle massive values
-    img.scan(0,0, img.bitmap.width, img.bitmap.height, (x,y,idx) => {
-      const r = img.bitmap.data[idx+0] * rWeight;
-      const g = img.bitmap.data[idx+1] * gWeight;
-      const b = img.bitmap.data[idx+2] * bWeight;
-      const sum = r + g + b;
-
-      total += BigInt(Math.round(sum * baseWeight));
-    });
-
-    base = Number(total / BigInt(pixelCt))
+  switch (mode) {
+    case "sauvola":
+      return sauvola(
+        img,
+        getSetting<number>("simplify.sauvola.radius"),
+        getSetting<number>("simplify.sauvola.R"),
+        getSetting<number>("simplify.sauvola.k")
+      );
+    default:
+      console.log(`Unrecognized simplify mode: "${mode}"`);
+    case "basic":
+      return basicThreshold(
+        img,
+        getSetting<number>("simplify.basic.base"),
+        getSetting<number>("simplify.basic.threshold")
+      );
   }
-
-  const width = img.bitmap.width
-  const height = img.bitmap.height;
-  img.scan(0,0, width, height, (x,y,idx) => {
-    const r = img.bitmap.data[idx+0] * rWeight;
-    const g = img.bitmap.data[idx+1] * gWeight;
-    const b = img.bitmap.data[idx+2] * bWeight;
-
-
-    if ((r + g + b) - base < threshold) { // under threshold, convert to 0s
-      img.bitmap.data[idx+0] = 0;
-      img.bitmap.data[idx+1] = 0;
-      img.bitmap.data[idx+2] = 0;
-    }
-    else { // above threshold, convert to 255s
-      img.bitmap.data[idx+0] = 0xFF;
-      img.bitmap.data[idx+1] = 0xFF;
-      img.bitmap.data[idx+2] = 0xFF;
-    }
-  });
-  return img;
 }
 
 // remove stray dots of white or black
@@ -295,4 +272,31 @@ export function shift(
   });
 
   return shifted;
+}
+
+export function whitewashRed(
+  img: Jimp
+) {
+  const minRGRatio = getSetting<number>("whitewashRed.min-red/green-ratio");
+  const minRBRatio = getSetting<number>("whitewashRed.min-red/blue-ratio");
+  const minRedValue = getSetting<number>("whitewashRed.min-red-value");
+  const fillRadius = getSetting<number>("whitewashRed.fill-radius");
+
+  const whitewashed = img.clone();
+  img.scan(0,0, img.bitmap.width, img.bitmap.height, (x,y, idx) => {
+    const r = img.bitmap.data[idx+0];
+    const g = img.bitmap.data[idx+1];
+    const b = img.bitmap.data[idx+2];
+
+    // color determined to be red; white wash
+    if (r >= minRedValue && g*minRGRatio <= r && b*minRBRatio <= r) {
+      for (let i = -fillRadius+1; i < fillRadius; i++) {
+        for (let j = -fillRadius+1; j < fillRadius; j++) {
+          setPixelAt(whitewashed, x+i,y+j, 0xFF);
+        }
+      }
+    }
+  });
+
+  return whitewashed;
 }

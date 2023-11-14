@@ -2,7 +2,7 @@ import Jimp = require("jimp");
 const fs = require("fs");
 
 import { appendToName, extensionless, getAllFiles, setExt, toAbsoluteInput, toAbsoluteOutput } from "./fsExt.js";
-import { denoise, destring, getCharTokens, highlightChars, horizontalPrune, simplify } from "./jimpable.js";
+import { denoise, destring, getCharTokens, highlightChars, horizontalPrune, simplify, whitewashRed } from "./jimpable.js";
 import { lap, startTimer } from "./timer.js";
 import { getSetting } from "./settings.js";
 import { toText } from "./textable.js";
@@ -100,7 +100,15 @@ function doConversion(
         if (err) console.error(err);
         writeMessage(`successfully read`, name);
 
-        const simplified = simplify(img);
+        const whitewashed = whitewashRed(img);
+        writeMessage("whitewashed", name);
+        const simplified = simplify(whitewashed);
+
+        if (getSetting<boolean>("simplify.doOutput")) {
+          writeMessage("wrote whitewashed", name);
+          whitewashed.write(appendToName(output, "-simplified"));
+        }
+
         writeMessage("simplified", name);
         const destrung = destring(simplified.clone());
         writeMessage("destrung", name);
