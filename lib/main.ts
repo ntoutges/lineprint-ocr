@@ -120,10 +120,10 @@ function doConversion(
         }
 
         if (getSetting("charHighlight.doOutputBounds") && !getSetting("charHighlight.doOutputAfterPostProcess")) {
-          const bounded = highlightChars(destrung.clone(), tokens);
-          writeMessage("highlighted", name);
+          const bounded = highlightChars(pruned.clone(), tokens);
+          writeMessage("pre-highlighted", name);
           bounded.write(output);
-          writeMessage("wrote highlighted", name)
+          writeMessage("wrote pre-highlighted", name)
         }
 
         const doSeparate = getSetting<boolean>("recognition.do-separate");
@@ -180,7 +180,7 @@ function doConversion(
             if (doOutputIndividual) fs.writeFileSync(setExt(output, "txt"), str); // don't write output file if learning
             if (doCombo) addToCombo(index, str);
 
-            // writeTokenImages(__dirname + "/../io/output/test", tokens); // testing
+            writeTokenImages(__dirname + "/../io/output/test", tokens); // testing
 
             resolve("Ok.");
           });
