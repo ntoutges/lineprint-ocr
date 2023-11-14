@@ -9,6 +9,12 @@
     "min-red-value": 100,
     "fill-radius": 2
   },
+  "whitewashRed": { // remove red pen markings
+    "min-red/green-ratio": 1.5,
+    "min-red/blue-ratio": 1.5,
+    "min-red-value": 100,
+    "fill-radius": 2
+  },
   "simplify": {
     "mode": "basic", // "basic" | "sauvola"
     "doOutput": false,
@@ -40,7 +46,7 @@
   },
   "charBounds": {
     "max-x-portion": 0.5, // maximum distances from the left to be considered a first character
-    "max-first-line-x-portion": 0.8, // maximum distance from the left to be considered a character in the first line
+    "max-first-line-x-portion": 0.3, // maximum distance from the left to be considered a character in the first line
     "charSize": { // leave components at '0' to calculate automatically
       "x": 59,
       "y": 76,
@@ -57,7 +63,7 @@
     "yBuffer": { // amount of pixels around the center line to check
       "total-offset": 20,
       "total": 15, // across entire page
-      "individual": 20 // gap from one char to the next
+      "individual": 25 // gap from one char to the next
     },
     "lookaround": { // amount of lines to look around for smallest gap when splitting conjoined chars
       "vertical-up": 2,
@@ -71,7 +77,7 @@
   "charHighlight": {
     "doOutputBounds": true,
     "doHighlightSpace": true,
-    "doOutputAfterPostProcess": true
+    "doOutputAfterPostProcess": false
   },
   "recognition": {
     "do-separate": true, // false = quickly run program (testing)
