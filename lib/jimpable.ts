@@ -27,8 +27,6 @@ export function simplify(img: Jimp) {
         getSetting<number>("simplify.basic.threshold")
       );
   }
-  
-  return img;
 }
 
 // remove stray dots of white or black
