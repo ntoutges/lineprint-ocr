@@ -59,11 +59,13 @@ export function isStake(
   y: number,
   bounds: Bounds,
   step: number,
-  minWidth: number,
+  maxWidth: number,
   minHeight: number
 ) {
   const extremeY = (step < 0) ? bounds.y-1 : bounds.y2+1;
   let lines = 0;
+  let wasEmpty = true;
+
   for (let y2 = y+step; y2 != extremeY; y2 += step) {
     let total = 0;
     let minX = Infinity;
@@ -77,8 +79,12 @@ export function isStake(
     });
 
     // out of bounds
-    if (total > minWidth) break;
-    if (total == 0) continue; // don't count as line if empty
+    if (total > maxWidth) break;
+    if (total == 0) {
+      if (wasEmpty) continue; // getting past blank lines
+      return false; // empty line where there should be a stake; consider stake nonexistant
+    }
+    wasEmpty = false;
 
     if (cx >= minX && cx <= maxX) lines++; // only add if vaguely centered
   }

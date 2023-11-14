@@ -221,9 +221,9 @@ function gradientDescent(input: TokenText, settings: Record<string,any>) {
       if (minChar != token.value) {
         process.stdout.write(`  [${y+1},${x}: \x1b[36m${token.value}\x1b[0m -> \x1b[36m${minChar}\x1b[0m]`);
         input.setChar(y,x, minChar);
-        if (minChar == "C") {
-          console.log(token.distances, token.adistance, minDist)
-        }
+        // if (minChar == "C") {
+        //   console.log(token.distances, token.adistance, minDist)
+        // }
       }
       token.adistance = minDist;
       for (const char in token.distances) {
@@ -343,7 +343,7 @@ function dollarSignDisambiguation(input: TokenText, settings: Record<string,any>
       let stakeCount = 0;
       
       // check if top-stake exists
-      stakeCount += +isStake(
+      stakeCount += +isStake( // sets bit 0
         input.img,
         cX,token.bounds.y,
         token.bounds,
@@ -353,16 +353,17 @@ function dollarSignDisambiguation(input: TokenText, settings: Record<string,any>
       );
 
       // check if bottom-stake exists
-      stakeCount += +isStake(
+      stakeCount += 2 * +isStake( // sets bit 1
         input.img,
-        cX,token.bounds.y2,
+        cX,token.bounds.y2-1,
         token.bounds,
         -1,
         minStakeWidth,
         minStakeHeight
       );
 
-      const isDollarSign = stakeCount == 2 || (stakeCount == 1 && !requireBothStakes);
+      const isDollarSign = stakeCount == 0b11 || (stakeCount && !requireBothStakes);
+      console.log(cX, stakeCount, token.bounds)
       
       if ((isDollarSign) == (line[x] == "$")) continue; // no difference, no point
       if (isDollarSign) input.setChar(y,x, "$");
@@ -380,19 +381,28 @@ function expandYUntil(
   minWidth: number,
   maxWidth: number
 ) {
+  const cx = Math.round(x + width / 2)
+
   const extremeY = (step < 0) ? -1 : img.bitmap.height;
   let lastTotal = -1;
 
   for (let y2 = y+step; y2 != extremeY; y2 += step) {
     let total = 0;
+    let minX = Infinity;
+    let maxX = 0;
+
     img.scan(x,y2, width,1, (_x,_y,idx) => {
-      if (img.bitmap.data[idx] != 0xFF) total++; 
+      if (img.bitmap.data[idx] == 0xFF) return;
+      total++; 
+      minX = Math.min(minX, x);
+      maxX = Math.max(maxX, x);
     });
 
     if (lastTotal == -1) lastTotal = total;
     
-    // out of bounds
-    if (total <= minWidth || (total > maxWidth && total > lastTotal)) return y2 - step;
+    const outOfBounds = total <= minWidth || (total > maxWidth && total > lastTotal);
+    const vaguelyCentered = minX <= cx && maxX >= cx;
+    if (outOfBounds || !vaguelyCentered) return y2 - step;
 
     lastTotal = total;
   }

@@ -217,6 +217,7 @@ export function getImageDifference(
 ) {
   const posWeight = getSetting<number>("difference.weights.positive");
   const negWeight = getSetting<number>("difference.weights.negative");
+  const minDiff = getSetting<number>("difference.min-diff-threshold");
   const mode = getSetting<string>("difference.mode");
 
   let totalDist = 0;
@@ -224,7 +225,9 @@ export function getImageDifference(
   test.scan(0,0, test.bitmap.width, test.bitmap.height, (x,y,idx) => {
     const testVal = test.bitmap.data[idx];
     const diff = testVal - model.bitmap.data[idx];
-    if (diff != 0xff) totalPx++;
+    
+    if (testVal != 0xff) totalPx++;
+    if (Math.abs(diff) < minDiff) return; // too small of a difference; ignore
     
     totalDist += (diff < 0) ? -negWeight * diff : posWeight * diff;
   });

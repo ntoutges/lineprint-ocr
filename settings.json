@@ -40,7 +40,7 @@
   },
   "charBounds": {
     "max-x-portion": 0.5, // maximum distances from the left to be considered a first character
-    "max-first-line-x-portion": 0.3, // maximum distance from the left to be considered a character in the first line
+    "max-first-line-x-portion": 0.7, // maximum distance from the left to be considered a character in the first line
     "charSize": { // leave components at '0' to calculate automatically
       "x": 59,
       "y": 76,
@@ -71,7 +71,7 @@
   "charHighlight": {
     "doOutputBounds": true,
     "doHighlightSpace": true,
-    "doOutputAfterPostProcess": false
+    "doOutputAfterPostProcess": true
   },
   "recognition": {
     "do-separate": true, // false = quickly run program (testing)
@@ -80,14 +80,14 @@
     // amount that the progam will try to move the image to the center
     "x-center-weight": 1,
     "y-center-weight": 0.5, // 0 means y-centering won't apply at all
-    "doOutputIndividual": true
-  },
+    "doOutputIndividual": false  },
   "difference": {
     "mode": "absolute", // "absolute" | "relative"
     "weights": {
       "positive": 1, // exists in test, but not mode
       "negative": 1 // exists in model, but not test
-    }
+    },
+    "min-diff-threshold": 150 // values must be at least this large to register as different
   },
   "postprocessing": {
     "enabled": {
