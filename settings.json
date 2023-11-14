@@ -1,7 +1,7 @@
 {
   "general": {
-    "infolder1": "",
-    "infolder": "C:\\Users\\Nicholas\\FTP\\FOCAL\\Categorized" // empty to use defualt (input/); specify with absolute path
+    "infolder": "",
+    "infolder1": "C:\\Users\\Nicholas\\FTP\\FOCAL\\Categorized" // empty to use defualt (input/); specify with absolute path
   },
   "whitewashRed": { // remove red pen markings
     "min-red/green-ratio": 1.5,
@@ -10,16 +10,16 @@
     "fill-radius": 2
   },
   "simplify": {
-    "mode": "basic", // "basic" | "sauvola"
-    "doOutput": false,
+    "mode": "fsauvola", // "basic" | "sauvola" | "fsauvola"
+    "doOnlyOutput": false, // used for testing parameters; only reads image, simplifies, then outputs
     "basic": {
       "base": 0.9,
       "threshold": 10
     },
     "sauvola": {
-      "radius": 3,
-      "R": 14,
-      "k": 0.5
+      "radius": 20,
+      "R": 350, // effectively the threshold control
+      "k": 0.45  // sensitivity (increasing seems to have removed lots of small dots)
     }
   },
   "denoise": { // assumes that img has already been simplified

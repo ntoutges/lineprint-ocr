@@ -103,13 +103,15 @@ function doConversion(
         const whitewashed = whitewashRed(img);
         writeMessage("whitewashed", name);
         const simplified = simplify(whitewashed);
+        writeMessage("simplified", name);
 
-        if (getSetting<boolean>("simplify.doOutput")) {
-          writeMessage("wrote whitewashed", name);
-          whitewashed.write(appendToName(output, "-simplified"));
+        if (getSetting<boolean>("simplify.doOnlyOutput")) {
+          simplified.write(appendToName(output, "-simplified"));
+          writeMessage("wrote simplified", name);
+          resolve("Output Simplified");
+          return;
         }
 
-        writeMessage("simplified", name);
         const destrung = destring(simplified.clone());
         writeMessage("destrung", name);
         const denoised = denoise(destrung.clone());
