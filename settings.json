@@ -10,17 +10,13 @@
     "fill-radius": 2
   },
   "simplify": {
-    "method": "basic", // "basic" | "sauvola",
-    "doOutput": false,
-    "basic": {
-      "base-weight": 0.9,
-      "threshold": 10
+    "weights": {
+      "r": 0.33,
+      "g": 0.33,
+      "b": 0.33,
+      "base": 0.9
     },
-    "sauvola": {
-      "radius": 3,  // size of moving window
-      "R": 12, // "dynamic range of standard deviation"
-      "k": 0.5  // "constant value betwee 0.2 and 0.5"
-    }
+    "threshold": 10
   },
   "denoise": { // assumes that img has already been simplified
     "limit": 300, // minimum size a blob must be to cound as real
@@ -84,14 +80,13 @@
   },
   "postprocessing": {
     "enabled": {
-      "Empty Space Correction": true,
       "; Correction": true,
       ": Correction": true,
       "- Correction": true,
       "B/8 Correction": false,
       "B/8 Replacement": false,
       "Garbage Removal": false,
-      "Space Correction": false,
+      "Space Correction": true,
       "Gradient Descent": true,
       "Dollar-Sign Disambiguation": true
     },
@@ -117,7 +112,7 @@
       },
       "Space Correction": {
         "max-offset-ratio": 0.3, // ratio of space size
-        "space-location-consensus": "mean", // "mean" | "uniform" | "printable-uniform",
+        "space-location-consensus": "mean", // "mean" | "uniform",
         "method": "del" // "add" | "del"
       },
       "Gradient Descent": {

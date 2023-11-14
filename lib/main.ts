@@ -2,7 +2,7 @@ import Jimp = require("jimp");
 const fs = require("fs");
 
 import { appendToName, extensionless, getAllFiles, setExt, toAbsoluteInput, toAbsoluteOutput } from "./fsExt.js";
-import { denoise, destring, getCharTokens, highlightChars, horizontalPrune, simplify, whitewashRed } from "./jimpable.js";
+import { denoise, destring, getCharTokens, highlightChars, horizontalPrune, simplify } from "./jimpable.js";
 import { lap, startTimer } from "./timer.js";
 import { getSetting } from "./settings.js";
 import { toText } from "./textable.js";
@@ -100,18 +100,16 @@ function doConversion(
         if (err) console.error(err);
         writeMessage(`successfully read`, name);
 
-        const whitewashed = whitewashRed(img);
-        writeMessage("whitewashed", name); // remove red streaks
-        const simplified = simplify(whitewashed);
-        writeMessage("simplified", name); // convert to pure black/white pixels
-        const destrung = destring(simplified);
+        const simplified = simplify(img);
+        writeMessage("simplified", name);
+        const destrung = destring(simplified.clone());
         writeMessage("destrung", name);
-        const denoised = denoise(destrung);
+        const denoised = denoise(destrung.clone());
         writeMessage("denoised", name);
-        const pruned = horizontalPrune(denoised);
+        const pruned = horizontalPrune(denoised.clone());
         writeMessage("pruned", name);
 
-        const tokens = getCharTokens(pruned);
+        const tokens = getCharTokens(pruned.clone());
         writeMessage("tokenized", name);
 
         if (getSetting("simplify.doOutput")) {

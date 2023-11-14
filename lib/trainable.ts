@@ -122,9 +122,10 @@ export async function recognizeFromTrainingDataset(tokens: Token[][]) {
 
   let i = 0;
   const lineCt = Object.keys(tokens).length;
+  process.stdout.write(`: Recognizing Images | 0/${lineCt} lines processed`);
   let lastLineLen = 0;
   for (const line of tokens) {
-    const outLine = `\r: Recognizing Characters | ${++i}/${lineCt} lines processed "${line.map(val => val.value ?? "?").join("").padEnd(line.length, " ")}"`;
+    const outLine = `\r: Recognizing Images | ${++i}/${lineCt} lines processed "${line.map(val => val.value ?? "?").join("").padEnd(line.length, " ")}"`;
     process.stdout.write(outLine.padEnd(lastLineLen, " "));
     lastLineLen = outLine.length;
 
@@ -170,7 +171,7 @@ export async function recognizeFromTrainingDataset(tokens: Token[][]) {
       // assign best character
       token.value = minChar;
 
-      process.stdout.write(`\r: Recognizing Characters | ${i}/${lineCt} lines processed "${line.map(val => val.value ?? "?").join("").padEnd(line.length, " ")}"`);
+      process.stdout.write(`\r: Recognizing Images | ${i}/${lineCt} lines processed "${line.map(val => val.value ?? "?").join("").padEnd(line.length, " ")}"`);
     }
   }
   console.log(""); // new line
@@ -221,7 +222,7 @@ export function getImageDifference(
   return totalDist;
 }
 
-export function getEmptyImageDifference(
+function getEmptyImageDifference(
   img: Jimp
 ) {
   let totalDist = 0;

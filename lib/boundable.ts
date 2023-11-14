@@ -590,22 +590,17 @@ export function getTopLeftCharBounds(
 
   let charMinX = Infinity;
   let charMinY = 0;
-  let emptyLines = 0;
   for (let y = minY; y <= maxY; y++) {
-    let isEmpty = true;
     for (let x = minX; x <= maxX; x++) {
       const idx = 4 * (x + y*img.bitmap.width);
       if (img.bitmap.data[idx] != 0) continue; // go to next
-      isEmpty = false;
+
       if (x < charMinX - xDiff) {
         charMinX = x;
         charMinY = y;
       }
     }
-    if (isEmpty) emptyLines++;; // fully empty line implies no characters in sight
-    if (emptyLines > 3) return null; // too many empty lines
   }
-
 
   if (charMinX == Infinity) return null;
   return floodFillBounds(img,charMinX, charMinY);
