@@ -2,6 +2,8 @@
   "general": {
     "infolder": "",
     "infolder1": "C:\\Users\\Nicholas\\FTP\\FOCAL\\Categorized" // empty to use defualt (input/); specify with absolute path
+    "infolder": "",
+    "infolder1": "C:\\Users\\Nicholas\\FTP\\FOCAL\\Categorized" // empty to use defualt (input/); specify with absolute path
   },
   "whitewashRed": { // remove red pen markings
     "min-red/green-ratio": 1.5,
@@ -18,8 +20,8 @@
     },
     "sauvola": {
       "radius": 20,
-      "R": 340, // effectively the threshold control
-      "k": 0.5  // sensitivity (increasing seems to have removed lots of small dots)
+      "R": 350, // effectively the threshold control
+      "k": 0.45  // sensitivity (increasing seems to have removed lots of small dots)
     }
   },
   "denoise": { // assumes that img has already been simplified
