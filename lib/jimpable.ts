@@ -5,12 +5,19 @@ import { Bounds, floodFill, floodFillAdd, floodFillBeyond, floodFillUntil } from
 import { getAverageCharBounds, getLineCharBounds, getLineCharBoundsBlind, getLineFirstCharBounds, getTilt } from "./boundable.js";
 import { categorizeRegions, getPrunableRegions, getRegions, groupRegions, prunePrunableRegions } from "./prunable.js";
 import { Token, getLeftmostBound, getTextOrigion, tokenizeBounds } from "./tokenable.js";
-import { basicThreshold, sauvola } from "./threshold.js";
+import { basicThreshold, sauvola, sauvolaOptimized } from "./threshold.js";
 
 export function simplify(img: Jimp) {
   const mode = getSetting<string>("simplify.mode");
 
   switch (mode) {
+    case "fsauvola":
+      return sauvolaOptimized(
+        img,
+        getSetting<number>("simplify.sauvola.radius"),
+        getSetting<number>("simplify.sauvola.R"),
+        getSetting<number>("simplify.sauvola.k")
+      );
     case "sauvola":
       return sauvola(
         img,

@@ -32,9 +32,6 @@ settings.init().then(() => {
       case "stake":
         testStake(unnamedArgs[1]);
         break;
-      case "infinimage":
-        makeBigImg(+unnamedArgs[1]);
-        break;
       default:
         console.log(`Unrecognized test "${unnamedArgs[0]}"`);
     }
@@ -82,16 +79,4 @@ function testStake(name) {
 
     console.log(`stake count: ${val}`)
   });
-}
-
-// note: shows JIMP automatically truncates binary values to be in range 0-255
-function makeBigImg(val) {
-  const img = new Jimp(10,10, "white");
-  img.scan(0,0, 10,10, (x,y, idx) => {
-    img.bitmap.data[idx+0] = val;
-    img.bitmap.data[idx+1] = val;
-    img.bitmap.data[idx+2] = val;
-  });
-
-  console.log(img.bitmap.data[0]);
 }

@@ -100,24 +100,26 @@ function doConversion(
         if (err) console.error(err);
         writeMessage(`successfully read`, name);
 
-        const whitewashed = whitewashRed(img);
+        const whitewashed = whitewashRed(img); // remove red-pen markings
         writeMessage("whitewashed", name);
-        const simplified = simplify(whitewashed);
+        const simplified = simplify(whitewashed); // apply threshold to get either pure white/black px
+        writeMessage("simplified", name);
 
-        if (getSetting<boolean>("simplify.doOutput")) {
-          writeMessage("wrote whitewashed", name);
-          whitewashed.write(appendToName(output, "-simplified"));
+        if (getSetting<boolean>("simplify.doOnlyOutput")) {
+          simplified.write(appendToName(output, "-simplified"));
+          writeMessage("wrote simplified", name);
+          resolve("Output Simplified");
+          return;
         }
 
-        writeMessage("simplified", name);
-        const destrung = destring(simplified.clone());
+        const destrung = destring(simplified.clone()); // remove pixels not fully surrounded by other characters (helps to get rid of single-pixel lines)
         writeMessage("destrung", name);
-        const denoised = denoise(destrung.clone());
+        const denoised = denoise(destrung.clone()); // get rid of chunks of black pixels that are too small
         writeMessage("denoised", name);
-        const pruned = horizontalPrune(denoised.clone());
+        const pruned = horizontalPrune(denoised.clone()); // try to get rid of bridges between characters (detect "thin" regions between "thick" regions)
         writeMessage("pruned", name);
 
-        const tokens = getCharTokens(pruned.clone());
+        const tokens = getCharTokens(pruned.clone()); // create tokens, each of which represents a single character
         writeMessage("tokenized", name);
 
         if (getSetting("simplify.doOutput")) {
